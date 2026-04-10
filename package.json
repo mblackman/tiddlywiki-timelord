@@ -13,8 +13,9 @@
   "author": "Ashlin Duncan",
   "license": "ISC",
   "devDependencies": {
-    "@babel/cli": "^7.10.1",
-    "@babel/core": "^7.10.2",
-    "@babel/plugin-transform-modules-commonjs": "^7.10.1"
+    "@babel/cli": "^7.28.6",
+    "@babel/core": "^7.29.0",
+    "@babel/plugin-transform-modules-commonjs": "^7.28.6",
+    "tiddlywiki": "^5.3.8"
   }
 }
