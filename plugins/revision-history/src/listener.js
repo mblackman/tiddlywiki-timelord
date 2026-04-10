@@ -4,7 +4,8 @@ import { Revisor, generateTag } from './revisor.js';
 // Constructs a revisor and listens for changes to put in it
 export function startup() {
 	let revisor = new Revisor();
-	$tw.hooks.addHook("th-saving-draft", (draft, newTiddler) => {
+	$tw.hooks.addHook("th-saving-tiddler", (newTiddler, draft) => {
+		if (!draft) return newTiddler; // Guard for TW < 5.3.x
 		// Not overwriting anything; no revision necessary!
 		let oldTitle = draft.getFieldString("draft.of");
 		if (!oldTitle) return newTiddler;

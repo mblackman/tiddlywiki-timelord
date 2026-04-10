@@ -3,7 +3,7 @@
     "description": "A revision history plugin.",
     "author": "mblackman",
     "version": "0.0.1",
-    "core-version": ">=5.0.8",
+    "core-version": ">=5.3.0",
     "source": "",
     "plugin-type": "plugin",
     "list": "readme"

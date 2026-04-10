@@ -17,14 +17,6 @@
 			}
 		},
 		{
-			"file": "navigator.js",
-			"fields": {
-				"type": "application/javascript",
-				"title": "$:/core/modules/widgets/navigator.js",
-				"module-type": "widget"
-			}
-		},
-		{
 			"file": "Revisions.tid",
 			"fields": {
 				"type": "text/vnd.tiddlywiki",
