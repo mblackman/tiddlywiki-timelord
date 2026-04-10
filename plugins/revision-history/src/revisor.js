@@ -13,6 +13,13 @@ export class Revisor {
 	constructor() {}
 
 	addToHistory(name, tiddler) {
+		const newText = tiddler.getFieldString("text");
+		const isDuplicate = this.getHistory(name).some(title => {
+			const rev = $tw.wiki.getTiddler(title);
+			return rev && rev.getFieldString("text") === newText;
+		});
+		if (isDuplicate) return;
+
 		let modified = tiddler.fields.modified;
 
 		if (modified == null) {
