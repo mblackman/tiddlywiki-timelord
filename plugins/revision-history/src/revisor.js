@@ -30,7 +30,8 @@ export class Revisor {
 			title: generateTitle({ name, date: modified.toUTCString(), author }),
 			"revision-date": modified.getTime(),
 			tags: "[[" + generateTag(name) + "]]",
-			"revision-caption": generateCaption({ name, date: modified.toUTCString(), author })
+			"revision-caption": generateCaption({ name, date: modified.toUTCString(), author }),
+			"revision-original-tags": tiddler.getFieldString("tags"),
 		});
 
 		$tw.wiki.addTiddler(entry);
@@ -71,6 +72,33 @@ export class Revisor {
 	// Returns whether history exists for this tiddler
 	historyExists(name) {
 		return this.getHistory(name).length != 0;
+	}
+
+	restoreFromRevision(revisionTitle) {
+		const revision = $tw.wiki.getTiddler(revisionTitle);
+		if (!revision) return;
+
+		const { name: originalName } = parseTitle(revisionTitle);
+		if (!originalName) return;
+
+		// Snapshot current state first so the restore is undoable
+		const currentTiddler = $tw.wiki.getTiddler(originalName);
+		if (currentTiddler) {
+			this.addToHistory(originalName, currentTiddler);
+		}
+
+		// Copy all fields from revision, then fix up for the live tiddler
+		const restoredFields = Object.assign({}, revision.fields, {
+			title: originalName,
+			tags: revision.fields["revision-original-tags"] || "",
+			"revision-tag": generateTag(originalName),
+		});
+		delete restoredFields["revision-date"];
+		delete restoredFields["revision-caption"];
+		delete restoredFields["revision-original-tags"];
+
+		$tw.wiki.addTiddler(new $tw.Tiddler(restoredFields));
+		console.log("Restored:", revisionTitle, "→", originalName);
 	}
 
 	// Removes the history for this tiddler

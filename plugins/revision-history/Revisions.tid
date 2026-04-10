@@ -3,6 +3,16 @@
 \end
 
 <$list filter="[tag{!!revision-tag}sort[revision-date]reverse[]]">
-<$macrocall $name="listlink" caption={{!!revision-caption}} title={{!!title}} />
+<$set name="revisionTitle" value=<<currentTiddler>>>
+<$macrocall $name="listlink" caption={{!!revision-caption}} title=<<revisionTitle>> />
+<$reveal type="nomatch" state="$:/state/revision-history/restore-confirm" text=<<revisionTitle>>>
+<$button>Restore<$action-setfield $tiddler="$:/state/revision-history/restore-confirm" $value=<<revisionTitle>>/></$button>
+</$reveal>
+<$reveal type="match" state="$:/state/revision-history/restore-confirm" text=<<revisionTitle>>>
+Restore this version?
+<$button>Yes<$action-sendmessage $message="tm-restore-revision" revisionTitle=<<revisionTitle>>/><$action-setfield $tiddler="$:/state/revision-history/restore-confirm" $value=""/></$button>
+<$button>No<$action-setfield $tiddler="$:/state/revision-history/restore-confirm" $value=""/></$button>
+</$reveal>
 <br/>
+</$set>
 </$list>

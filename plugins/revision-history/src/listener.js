@@ -41,6 +41,13 @@ export function startup() {
 
     	revisor.addToHistory(newTitle, oldTiddler);
 
-    	return newTiddler; 
+    	return newTiddler;
+	});
+
+	$tw.rootWidget.addEventListener("tm-restore-revision", function(event) {
+		const revisionTitle = event.paramObject && event.paramObject.revisionTitle;
+		if (revisionTitle) {
+			revisor.restoreFromRevision(revisionTitle);
+		}
 	});
 }
