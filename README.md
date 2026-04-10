@@ -1,32 +1,43 @@
-# Revision History for TiddlyWiki
-A bare-bones TiddlyWiki plugin to provide revision history for saved Tiddlers.
+# Revision History for TiddlyWiki (mblackman fork)
 
-[View Demo](https://ashlinduncan.github.io/tiddlywiki-revision-history/)
+A personal fork of [Ashlin Duncan's tiddlywiki-revision-history](https://github.com/AshlinDuncan/tiddlywiki-revision-history), with the hopes of improvements to the interface and integration with TiddlyWiki.
+
+[Demo](https://mblackman.github.io/tiddlywiki-revision-history/)
+
+## Goals
+
+- **Infinite revision history** — no automatic pruning, ever. The wiki is the source of truth.
+- **Full restore** — click any revision and restore the tiddler to that state (restore is itself undoable).
+- **Delete capture** — when a tiddler is deleted, its final state is saved before removal. Deleted-tiddler history stays discoverable and restorable.
+- **Diff view** — see exactly what changed between any two revisions.
+- **Bulk-operation pause** — toggle tracking off for mass imports, back on when done.
+
+## Building
+
+```bash
+npm install
+npm run build-plugin   # outputs build/revision-history.tid
+npm run build-all      # also builds the demo wiki to build/index.html
+npm run serve          # dev server at localhost:8080
+```
 
 ## Installation
 
-**Quick Install (recommended)**: Visit the [Demo](https://ashlinduncan.github.io/tiddlywiki-revision-history/) and follow the quick-install instructions there.
+Install it from the [Demo](https://mblackman.github.io/tiddlywiki-revision-history/) page by dragging and dropping the plugin.
 
-**Building:**
-* Clone the git repo
-* Run `npm install`
-* Run `npm run build-plugin`.
-* Then, import the generated `.tid` file from ./build into your project, either by drag-and-drop or another import strategy.
+Or if you are testing locally:
 
-## Usage
-Once a Tiddler has been edited, Revision History will intercept edits and save the old version as system Tiddlers. To view a listing of revisions, click the "Info" button on a Tiddler, and go to the "Revisions" tab.
+Import `build/revision-history.tid` into your TiddlyWiki by drag-and-drop or the standard import dialog.
 
-Only Tiddlers with a "text" field will have revision history available. System and Shadow Tiddlers are also excluded.
+## Requirements
 
-If a Tiddler is deleted, the revision history remains (although the deleted version is not included). It can be found in system Tiddlers through advanced search, or retrieved by adding a Tiddler of the same title, revising it, and then checking revision history.
+TiddlyWiki `>=5.3.0`.
 
-In larger projects, space may become an issue. There is currently no limit on how many revision Tiddlers can be generated.
+## Current behaviour
 
-**An Important Note**: This plugin overrides the `navigator.js` from `$:/core` in order to provide a single hook that exposes access to the draft. This plugin requires that access in order to support carrying revision history across renames. Ideally, this hook could be added to TiddlyWiki, or perhaps there is a better solution already implemented. Basically, watch out for incompatabilities.
+Once a tiddler has been edited, the plugin intercepts the save and archives the previous version as a system tiddler. To view revisions, click the **Info** button on a tiddler and go to the **Revisions** tab.
 
-## Future Improvements
-Although I don't actively develop this project, some possible future improvements:
-* Better handling for deleted Tiddlers: when a Tiddler is removed, save its revision history, or, by a config option, delete the entire revision history.
-* Allow clearing revision history after x amount of entries per Tiddler
-* Find a better option than overwriting `navigator.js` for hook support. Possibly, getting a draft hook into the main TiddlyWiki repository.
-* Improve the version view. Rather than just opening an old Tiddler, it should provide diff support and the ability to restore from a version.
+- Only tiddlers with a `text` field are tracked. System tiddlers and shadow tiddlers are excluded.
+- Field-only changes (tags, custom fields, no text change) are **not** currently tracked — planned for a future phase.
+- Renaming a tiddler migrates its full revision history to the new title.
+- Deleting a tiddler leaves existing revisions in place but does **not** capture the final state before deletion — this is a known gap being addressed in Phase 4.

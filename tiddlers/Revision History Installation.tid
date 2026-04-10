@@ -1,14 +1,14 @@
 created: 20200604095058366
-creator: Ashlin
+creator: Mblackman
 modified: 20200604102813741
-modifier: Ashlin
-revision-tag: $:/plugins/ashlin/revision-history/revisions/Revision History Installation
+modifier: Mblackman
+revision-tag: $:/plugins/mblackman/revision-history/revisions/Revision History Installation
 tags: 
 title: Revision History Installation
 type: text/vnd.tiddlywiki
 
 ''Quick Install:'' Drag the following link onto your ~TiddlyWiki page:
 
-!! $:/plugins/ashlin/revision-history
+!! $:/plugins/mblackman/revision-history
 
-See the [[GitHub page|https://github.com/AshlinDuncan/tiddlywiki-revision-history]] for more information.
+See the [[GitHub page|https://mblackman.github.io/tiddlywiki-revision-history/]] for more information.

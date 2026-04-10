@@ -4,7 +4,7 @@
 			"file": "lib/listener.js",
 			"fields": {
 				"type": "application/javascript",
-				"title": "$:/plugins/ashlin/revision-history/listener.js",
+				"title": "$:/plugins/mblackman/revision-history/listener.js",
 				"module-type": "startup"
 			}
 		},
@@ -12,7 +12,7 @@
 			"file": "lib/revisor.js",
 			"fields": {
 				"type": "application/javascript",
-				"title": "$:/plugins/ashlin/revision-history/revisor.js",
+				"title": "$:/plugins/mblackman/revision-history/revisor.js",
 				"module-type": "library"
 			}
 		},
@@ -28,7 +28,7 @@
 			"file": "Revisions.tid",
 			"fields": {
 				"type": "text/vnd.tiddlywiki",
-				"title": "$:/plugins/ashlin/revision-history/Revisions",
+				"title": "$:/plugins/mblackman/revision-history/Revisions",
 				"caption": "Revisions",
 				"tags": "$:/tags/TiddlerInfo"
 			}

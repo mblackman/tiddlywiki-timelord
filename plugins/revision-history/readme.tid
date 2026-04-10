@@ -1,4 +1,4 @@
-title: $:/plugins/ashlin/revision-history/readme
+title: $:/plugins/mblackman/revision-history/readme
 
 This plugin adds the ability to automatically store and display revision history. It is dependent on a slight modification of the core to add an additional hook in navigator.js.
 

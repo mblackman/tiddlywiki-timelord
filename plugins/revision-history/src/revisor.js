@@ -1,12 +1,12 @@
 // Structure of revisor tiddlers:
-// $:/plugins/ashlin/revision-history/revisions/<tiddler name>|<date>|<id>|<author>
-// Tagged with: $:/plugins/ashlin/revision-history/revisions/<tiddler name>
+// $:/plugins/mblackman/revision-history/revisions/<tiddler name>|<date>|<id>|<author>
+// Tagged with: $:/plugins/mblackman/revision-history/revisions/<tiddler name>
 // Field: revision-date: timestamp
 
 // Overview:
-// $:/plugins/ashlin/revision-history Revision History: <tiddler name>
+// $:/plugins/mblackman/revision-history Revision History: <tiddler name>
 
-const baseName = "$:/plugins/ashlin/revision-history/revisions/";
+const baseName = "$:/plugins/mblackman/revision-history/revisions/";
 const titleRegexp = new RegExp("^" + escapeRegExp(baseName) + "(.+)\\|(.+)\\|(.+)\\|(.+)$", "gi");
 const tagRegexp = new RegExp("^" + escapeRegExp(baseName) + "(.+)$", "gi");
 export class Revisor {

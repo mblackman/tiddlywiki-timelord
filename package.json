@@ -10,7 +10,7 @@
     "babel": "babel plugins/revision-history/src -d plugins/revision-history/lib",
     "serve": "npm run babel && tiddlywiki --listen"
   },
-  "author": "Ashlin Duncan",
+  "author": "Matt Blackman",
   "license": "ISC",
   "devDependencies": {
     "@babel/cli": "^7.28.6",

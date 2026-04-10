@@ -37,7 +37,7 @@
         ],
         "revision-history": [
             "--rendertiddler",
-            "$:/plugins/ashlin/revision-history",
+            "$:/plugins/mblackman/revision-history",
             "revision-history.tid",
             "text/plain",
             "$:/core/templates/exporters/TidFile",
