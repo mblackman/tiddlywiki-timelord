@@ -8,7 +8,9 @@
     "build-plugin": "npm run babel && tiddlywiki --output build --build revision-history",
     "build-wiki": "tiddlywiki --output build --build index",
     "babel": "babel plugins/revision-history/src -d plugins/revision-history/lib",
-    "serve": "npm run babel && tiddlywiki --listen"
+    "serve": "npm run babel && tiddlywiki --listen",
+    "test": "jest",
+    "test:coverage": "jest --coverage"
   },
   "author": "Matt Blackman",
   "license": "ISC",
@@ -16,6 +18,8 @@
     "@babel/cli": "^7.28.6",
     "@babel/core": "^7.29.0",
     "@babel/plugin-transform-modules-commonjs": "^7.28.6",
+    "diff-match-patch": "^1.0.5",
+    "jest": "^30.3.0",
     "tiddlywiki": "^5.3.8"
   }
 }
