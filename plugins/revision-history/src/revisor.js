@@ -1,14 +1,14 @@
-// Structure of revisor tiddlers:
-// $:/plugins/mblackman/revision-history/revisions/<tiddler name>|<date>|<id>|<author>
-// Tagged with: $:/plugins/mblackman/revision-history/revisions/<tiddler name>
-// Field: revision-date: timestamp
-
-// Overview:
-// $:/plugins/mblackman/revision-history Revision History: <tiddler name>
+// Structure of revision tiddlers:
+// Title: $:/plugins/mblackman/revision-history/revisions/<hash>/<timestamp-ms>-<id>
+//   where <hash> is the djb2 hex hash of the tiddler name — stable across renames
+// Tag:   $:/plugins/mblackman/revision-history/revisions/<hash>
+// Fields:
+//   revision-of:            original tiddler name (the source of truth for lookup + restore)
+//   revision-date:          modified timestamp in ms (used for sorting)
+//   revision-original-tags: tags field of the original tiddler (restored on restore)
 
 const baseName = "$:/plugins/mblackman/revision-history/revisions/";
-const titleRegexp = new RegExp("^" + escapeRegExp(baseName) + "(.+)\\|(.+)\\|(.+)\\|(.+)$", "gi");
-const tagRegexp = new RegExp("^" + escapeRegExp(baseName) + "(.+)$", "gi");
+
 export class Revisor {
 	constructor() {}
 
@@ -21,29 +21,22 @@ export class Revisor {
 		if (isDuplicate) return;
 
 		let modified = tiddler.fields.modified;
-
-		if (modified == null) {
-			modified = tiddler.fields.created;
-		}
-		if (modified == null) {
-			modified = new Date();
-		}
+		if (modified == null) modified = tiddler.fields.created;
+		if (modified == null) modified = new Date();
 
 		let author = tiddler.getFieldString("modifier");
-
 		if (!author) author = "<anon>";
 
 		let entry = new $tw.Tiddler(tiddler, {
-			title: generateTitle({ name, date: modified.toUTCString(), author }),
+			title: generateTitle({ name, timestampMs: Date.now() }),
 			"revision-date": modified.getTime(),
+			"revision-of": name,
 			tags: "[[" + generateTag(name) + "]]",
-			"revision-caption": generateCaption({ name, date: modified.toUTCString(), author }),
 			"revision-original-tags": tiddler.getFieldString("tags"),
 		});
 
 		$tw.wiki.addTiddler(entry);
-
-		console.log("Added tiddler to history: ", name);
+		console.log("Added tiddler to history:", name);
 	}
 
 	captureDeletedState(name, tiddler) {
@@ -63,38 +56,33 @@ export class Revisor {
 	}
 
 	renameHistory(oldName, newName) {
-		if (oldName == newName) return;
+		if (oldName === newName) return;
 		if (!oldName.trim() || !newName.trim()) return;
 		let history = this.getHistory(oldName);
-		if (history.length == 0) return;
+		if (history.length === 0) return;
 
-		// Loop through and generate names as necessary. In case of matching  names, this will merge, not overwrite.
+		const newTag = generateTag(newName);
 		for (let title of history) {
 			let tiddler = $tw.wiki.getTiddler(title);
-			let { date, author } = parseTitle(title);
-
-			let newTiddler = new $tw.Tiddler(tiddler, {
-				// Retitle
-				title: generateTitle({ name: newName, date, author }),
-				// Retag
-				tags: "[[" + generateTag(newName) + "]]",
-			});
-
-			$tw.wiki.addTiddler(newTiddler);
-			$tw.wiki.deleteTiddler(title);
+			// Update revision-of and retag — no need to retitle, the hash in the
+			// title is just a unique identifier and does not need to match newName
+			$tw.wiki.addTiddler(new $tw.Tiddler(tiddler, {
+				"revision-of": newName,
+				tags: "[[" + newTag + "]]",
+			}));
 		}
 
 		console.log("Renamed history from", oldName, "to", newName);
 	}
 
-	// Returns a list of tiddler names of the various versions, sorted by date
+	// Returns a list of revision tiddler titles for the given tiddler name, sorted by TW
 	getHistory(name) {
 		return $tw.wiki.getTiddlersWithTag(generateTag(name));
 	}
 
 	// Returns whether history exists for this tiddler
 	historyExists(name) {
-		return this.getHistory(name).length != 0;
+		return this.getHistory(name).length !== 0;
 	}
 
 	// Returns the title of the most recent revision marked revision-deleted, or null if none
@@ -111,7 +99,7 @@ export class Revisor {
 		const revision = $tw.wiki.getTiddler(revisionTitle);
 		if (!revision) return;
 
-		const { name: originalName } = parseTitle(revisionTitle);
+		const originalName = revision.fields["revision-of"];
 		if (!originalName) return;
 
 		// Snapshot current state first so the restore is undoable
@@ -127,7 +115,7 @@ export class Revisor {
 			"revision-tag": generateTag(originalName),
 		});
 		delete restoredFields["revision-date"];
-		delete restoredFields["revision-caption"];
+		delete restoredFields["revision-of"];
 		delete restoredFields["revision-original-tags"];
 		delete restoredFields["revision-deleted"];
 
@@ -135,54 +123,40 @@ export class Revisor {
 		console.log("Restored:", revisionTitle, "→", originalName);
 	}
 
-	// Removes the history for this tiddler
+	// Removes all revision history for this tiddler
 	removeHistory(name) {
 		if (!name.trim()) return;
-		let history = this.getHistory(name);
-		for (let title of history) {
+		for (let title of this.getHistory(name)) {
 			$tw.wiki.deleteTiddler(title);
 		}
-		console.log("Removed history: ", name);
+		console.log("Removed history:", name);
 	}
 }
 
-export function parseTitle(title) {
-	let matches = [...title.matchAll(titleRegexp)][0];
-	return {
-		name: matches[1],
-		date: matches[2],
-		id: matches[3],
-		author: matches[4],
+// djb2 hash of a string, returned as an 8-char lowercase hex string.
+// Used to produce a path-safe, rename-stable segment for revision tiddler titles and tags.
+function hashName(name) {
+	let hash = 5381;
+	for (let i = 0; i < name.length; i++) {
+		hash = ((hash << 5) + hash + name.charCodeAt(i)) | 0;
 	}
+	return (hash >>> 0).toString(16).padStart(8, '0');
 }
 
-export function generateTitle({ name, date, author }) {
+export function generateTitle({ name, timestampMs }) {
 	let id = 0;
 	let title;
 	do {
-		title = `${baseName}${name}|${date}|${id}|${author}`;
+		title = `${baseName}${hashName(name)}/${timestampMs}-${id}`;
 		id++;
 	} while ($tw.wiki.tiddlerExists(title));
 	return title;
 }
 
-export function generateCaption({ name, date, author }) {
-	return `${name}: ${date} - ${author}`;
-}
-
-export function generateUITitle(name) {
-	return `${baseName} Revision History: ${name}`;
-}
-
-export function parseTag(tag) {
-	matches = tag.matchAll(tagRegexp);
-	return matches[0];
-}
-
 export function generateTag(name) {
-	return `${baseName}${name}`;
+	return `${baseName}${hashName(name)}`;
 }
 
 export function escapeRegExp(string) {
-	return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
+	return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }

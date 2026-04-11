@@ -1,4 +1,4 @@
-<$list filter="[all[tiddlers]has[revision-deleted]tags[]prefix[$:/plugins/mblackman/revision-history/revisions/]removeprefix[$:/plugins/mblackman/revision-history/revisions/]!is[tiddler]]" variable="deletedName">
+<$list filter="[all[tiddlers]has[revision-deleted]get[revision-of]unique[]!is[tiddler]]" variable="deletedName">
 
 <<deletedName>>
 <$reveal type="nomatch" state="$:/state/revision-history/restore-confirm" text=<<deletedName>>>
