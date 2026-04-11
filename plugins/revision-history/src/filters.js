@@ -5,7 +5,7 @@ const revisor = new Revisor();
 
 // Fields that change automatically on every save — excluded from change summaries.
 const AUTO_FIELDS = new Set([
-	'title', 'modified', 'modifier', 'created', 'creator',
+	'modified', 'modifier', 'created', 'creator',
 	'draft.of', 'draft.title', 'revision-tag'
 ]);
 
@@ -68,54 +68,20 @@ export const revisionchangedfields = function(source, operator, options) {
 	return results;
 };
 
-// Filter operator: revisionchanges
-// Usage: [<revisionTitle>revisionchanges[]]
-// Returns formatted descriptions of non-text field changes, one string per field.
-// Tags get special formatting showing added/removed tags.
-export const revisionchanges = function(source, operator, options) {
+// Filter operator: reconstructfield
+// Usage: [<revisionTitle>reconstructfield[fieldname]]
+// Returns the fully reconstructed value for a specific field in a revision tiddler.
+// For non-revision tiddlers, returns the field directly.
+export const reconstructfield = function(source, operator, options) {
+	const fieldName = operator.operand;
 	const results = [];
 	source(function(tiddler, title) {
-		if (!tiddler || !tiddler.fields["revision-of"]) return;
-
-		const name = tiddler.getFieldString("revision-of");
-		const tag = generateTag(name);
-		const history = $tw.wiki.getTiddlersWithTag(tag);
-		const sorted = history
-			.map(function(t) { return $tw.wiki.getTiddler(t); })
-			.filter(function(t) { return t != null; })
-			.sort(function(a, b) { return (a.fields["revision-date"] || 0) - (b.fields["revision-date"] || 0); });
-
-		const idx = sorted.findIndex(function(t) { return t.fields.title === title; });
-		if (idx <= 0) return;
-
-		const currentFields = revisor.reconstructAllFields(title);
-		const prevFields = revisor.reconstructAllFields(sorted[idx - 1].fields.title);
-
-		const allKeys = new Set([...Object.keys(currentFields), ...Object.keys(prevFields)]);
-		for (const key of allKeys) {
-			if (AUTO_FIELDS.has(key)) continue;
-			if (key === "text") continue; // text diffs shown via <$diff-text>
-			const oldVal = prevFields[key] || "";
-			const newVal = currentFields[key] || "";
-			if (oldVal === newVal) continue;
-
-			if (key === "tags") {
-				const oldTags = $tw.utils.parseStringArray(oldVal) || [];
-				const newTags = $tw.utils.parseStringArray(newVal) || [];
-				const added = newTags.filter(function(t) { return oldTags.indexOf(t) === -1; });
-				const removed = oldTags.filter(function(t) { return newTags.indexOf(t) === -1; });
-				const parts = [];
-				if (added.length) parts.push(added.map(function(t) { return "+[[" + t + "]]"; }).join(" "));
-				if (removed.length) parts.push(removed.map(function(t) { return "-[[" + t + "]]"; }).join(" "));
-				results.push("tags: " + parts.join(" "));
-			} else if (!oldVal) {
-				results.push(key + ": (added) " + newVal);
-			} else if (!newVal) {
-				results.push(key + ": (removed)");
-			} else {
-				results.push(key + ": " + oldVal + " → " + newVal);
-			}
+		if (!tiddler || !tiddler.fields["revision-of"]) {
+			results.push(tiddler ? tiddler.getFieldString(fieldName) : "");
+			return;
 		}
+		const fields = revisor.reconstructAllFields(title);
+		results.push(fields[fieldName] || "");
 	});
 	return results;
 };

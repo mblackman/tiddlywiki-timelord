@@ -1,6 +1,6 @@
 const { resetTw } = require('./mock-tw');
 const { generateTag, Revisor } = require('../plugins/revision-history/src/revisor');
-const { reconstructtext, revisionchangedfields, revisionchanges } = require('../plugins/revision-history/src/filters');
+const { reconstructtext, revisionchangedfields, reconstructfield } = require('../plugins/revision-history/src/filters');
 const DMP = require('diff-match-patch');
 
 beforeEach(() => {
@@ -166,149 +166,22 @@ describe('revisionchangedfields', () => {
 });
 
 // ---------------------------------------------------------------------------
-// revisionchanges filter operator
+// reconstructfield filter operator
 // ---------------------------------------------------------------------------
 
-describe('revisionchanges', () => {
-  it('returns formatted descriptions of field changes', () => {
-    const tag = generateTag('T');
-
-    $tw.wiki.addTiddler(new $tw.Tiddler({
-      title: 'rev1',
-      tags: '[[' + tag + ']]',
-      'revision-of': 'T',
-      'revision-date': 1000,
-      'revision-storage': 'full',
-      'revision-data': JSON.stringify({ text: 'x', custom: 'old value' }),
-    }));
-
-    $tw.wiki.addTiddler(new $tw.Tiddler({
-      title: 'rev2',
-      tags: '[[' + tag + ']]',
-      'revision-of': 'T',
-      'revision-date': 2000,
-      'revision-storage': 'full',
-      'revision-data': JSON.stringify({ text: 'x', custom: 'new value' }),
-    }));
-
-    const results = revisionchanges(makeSource('rev2'), {}, {});
-    expect(results).toHaveLength(1);
-    expect(results[0]).toContain('custom');
-    expect(results[0]).toContain('old value');
-    expect(results[0]).toContain('new value');
-    expect(results[0]).toContain('→');
+describe('reconstructfield', () => {
+  it('returns field directly for non-revision tiddlers', () => {
+    $tw.wiki.addTiddler(new $tw.Tiddler({ title: 'Regular', custom: 'val' }));
+    const results = reconstructfield(makeSource('Regular'), { operand: 'custom' }, {});
+    expect(results).toEqual(['val']);
   });
 
-  it('formats tag additions and removals with +/- notation', () => {
-    const tag = generateTag('T');
-
-    $tw.wiki.addTiddler(new $tw.Tiddler({
-      title: 'rev1',
-      tags: '[[' + tag + ']]',
-      'revision-of': 'T',
-      'revision-date': 1000,
-      'revision-storage': 'full',
-      'revision-data': JSON.stringify({ text: 'x', tags: 'alpha beta' }),
-    }));
-
-    $tw.wiki.addTiddler(new $tw.Tiddler({
-      title: 'rev2',
-      tags: '[[' + tag + ']]',
-      'revision-of': 'T',
-      'revision-date': 2000,
-      'revision-storage': 'full',
-      'revision-data': JSON.stringify({ text: 'x', tags: 'beta gamma' }),
-    }));
-
-    const results = revisionchanges(makeSource('rev2'), {}, {});
-    expect(results).toHaveLength(1);
-    expect(results[0]).toMatch(/tags:/);
-    expect(results[0]).toContain('+[[gamma]]');
-    expect(results[0]).toContain('-[[alpha]]');
+  it('returns empty string for nonexistent tiddlers', () => {
+    const results = reconstructfield(makeSource('noexist'), { operand: 'custom' }, {});
+    expect(results).toEqual(['']);
   });
 
-  it('formats field additions as "(added)"', () => {
-    const tag = generateTag('T');
-
-    $tw.wiki.addTiddler(new $tw.Tiddler({
-      title: 'rev1',
-      tags: '[[' + tag + ']]',
-      'revision-of': 'T',
-      'revision-date': 1000,
-      'revision-storage': 'full',
-      'revision-data': JSON.stringify({ text: 'x' }),
-    }));
-
-    $tw.wiki.addTiddler(new $tw.Tiddler({
-      title: 'rev2',
-      tags: '[[' + tag + ']]',
-      'revision-of': 'T',
-      'revision-date': 2000,
-      'revision-storage': 'full',
-      'revision-data': JSON.stringify({ text: 'x', newfield: 'hello' }),
-    }));
-
-    const results = revisionchanges(makeSource('rev2'), {}, {});
-    expect(results).toHaveLength(1);
-    expect(results[0]).toContain('newfield');
-    expect(results[0]).toContain('(added)');
-    expect(results[0]).toContain('hello');
-  });
-
-  it('formats field removals as "(removed)"', () => {
-    const tag = generateTag('T');
-
-    $tw.wiki.addTiddler(new $tw.Tiddler({
-      title: 'rev1',
-      tags: '[[' + tag + ']]',
-      'revision-of': 'T',
-      'revision-date': 1000,
-      'revision-storage': 'full',
-      'revision-data': JSON.stringify({ text: 'x', gone: 'was here' }),
-    }));
-
-    $tw.wiki.addTiddler(new $tw.Tiddler({
-      title: 'rev2',
-      tags: '[[' + tag + ']]',
-      'revision-of': 'T',
-      'revision-date': 2000,
-      'revision-storage': 'full',
-      'revision-data': JSON.stringify({ text: 'x' }),
-    }));
-
-    const results = revisionchanges(makeSource('rev2'), {}, {});
-    expect(results).toHaveLength(1);
-    expect(results[0]).toContain('gone');
-    expect(results[0]).toContain('(removed)');
-  });
-
-  it('skips text field (shown via diff widget instead)', () => {
-    const tag = generateTag('T');
-
-    $tw.wiki.addTiddler(new $tw.Tiddler({
-      title: 'rev1',
-      tags: '[[' + tag + ']]',
-      'revision-of': 'T',
-      'revision-date': 1000,
-      'revision-storage': 'full',
-      'revision-data': JSON.stringify({ text: 'old text' }),
-    }));
-
-    $tw.wiki.addTiddler(new $tw.Tiddler({
-      title: 'rev2',
-      tags: '[[' + tag + ']]',
-      'revision-of': 'T',
-      'revision-date': 2000,
-      'revision-storage': 'full',
-      'revision-data': JSON.stringify({ text: 'new text' }),
-    }));
-
-    const results = revisionchanges(makeSource('rev2'), {}, {});
-    // Text changes should not appear in the results
-    expect(results).toHaveLength(0);
-  });
-
-  it('returns empty for first revision (no predecessor)', () => {
+  it('returns reconstructed field for revision tiddlers', () => {
     const tag = generateTag('T');
     $tw.wiki.addTiddler(new $tw.Tiddler({
       title: 'rev1',
@@ -316,16 +189,10 @@ describe('revisionchanges', () => {
       'revision-of': 'T',
       'revision-date': 1000,
       'revision-storage': 'full',
-      'revision-data': JSON.stringify({ text: 'x', custom: 'val' }),
+      'revision-data': JSON.stringify({ custom: 'old value' }),
     }));
 
-    const results = revisionchanges(makeSource('rev1'), {}, {});
-    expect(results).toEqual([]);
-  });
-
-  it('returns empty for non-revision tiddlers', () => {
-    $tw.wiki.addTiddler(new $tw.Tiddler({ title: 'Regular', text: 'plain' }));
-    const results = revisionchanges(makeSource('Regular'), {}, {});
-    expect(results).toEqual([]);
+    const results = reconstructfield(makeSource('rev1'), { operand: 'custom' }, {});
+    expect(results).toEqual(['old value']);
   });
 });

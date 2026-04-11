@@ -5,7 +5,7 @@ import { Revisor, generateTag } from './revisor.js';
 // Skips fields that change automatically (timestamps, draft metadata, plugin-managed fields).
 function tiddlerFieldsChanged(oldTiddler, newTiddler) {
 	const skip = new Set([
-		'title', 'modified', 'modifier', 'created', 'creator',
+		'modified', 'modifier', 'created', 'creator',
 		'draft.of', 'draft.title', 'revision-tag'
 	]);
 	const allFields = new Set([

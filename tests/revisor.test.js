@@ -974,7 +974,7 @@ describe('Revisor._getChangedFieldNames', () => {
     expect(changed).toContain('text');
     expect(changed).toContain('tags');
     expect(changed).toContain('custom');
-    expect(changed).not.toContain('title');
+    expect(changed).toContain('title');
     expect(changed).not.toContain('modified');
   });
 
@@ -997,8 +997,8 @@ describe('Revisor._getChangedFieldNames', () => {
   });
 
   it('skips auto-managed fields', () => {
-    const prev = { title: 'old', modified: '100', text: 'same' };
-    const curr = { title: 'new', modified: '200', text: 'same' };
+    const prev = { modified: '100', text: 'same' };
+    const curr = { modified: '200', text: 'same' };
     const changed = revisor._getChangedFieldNames(curr, prev);
     expect(changed).toHaveLength(0);
   });

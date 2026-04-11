@@ -17,6 +17,7 @@
 
 const baseName = "$:/plugins/mblackman/revision-history/revisions/";
 const SNAPSHOT_INTERVAL = 10;
+const SCHEMA_VERSION = "1";
 
 let _dmp = null;
 function getDmp() {
@@ -49,7 +50,7 @@ function serializeFields(tiddler) {
 
 // Fields that change automatically on every save — not considered "meaningful" changes.
 const AUTO_FIELDS = new Set([
-	'title', 'modified', 'modifier', 'created', 'creator',
+	'modified', 'modifier', 'created', 'creator',
 	'draft.of', 'draft.title', 'revision-tag'
 ]);
 
@@ -169,6 +170,7 @@ export class Revisor {
 			"revision-content-hash": candidateContentHash,
 			"revision-changed-fields": changedFieldNames.join(" "),
 			"revision-number": revisionNumber,
+			"revision-version": SCHEMA_VERSION,
 			tags: "[[" + generateTag(name) + "]]",
 		});
 
@@ -256,9 +258,11 @@ export class Revisor {
 		// Reconstruct the full field state (handles full/diff/delta chains)
 		const fullFields = this.reconstructAllFields(revisionTitle);
 
+		const targetTitle = fullFields.title || originalName;
+
 		const restoredFields = Object.assign({}, fullFields, {
-			title: originalName,
-			"revision-tag": generateTag(originalName),
+			title: targetTitle,
+			"revision-tag": generateTag(targetTitle),
 		});
 
 		// Strip revision-specific fields that should not appear on the live tiddler
@@ -272,9 +276,34 @@ export class Revisor {
 		delete restoredFields["revision-deleted"];
 		delete restoredFields["revision-changed-fields"];
 		delete restoredFields["revision-number"];
+		delete restoredFields["revision-version"];
+
+		const wasEnabled = $tw.wiki.getTiddlerText("$:/config/mblackman/revision-history/enabled", "yes");
+		if (wasEnabled === "yes") {
+			$tw.wiki.addTiddler(new $tw.Tiddler({ title: "$:/config/mblackman/revision-history/enabled", text: "no" }));
+		}
+
+		if (targetTitle !== originalName) {
+			$tw.wiki.deleteTiddler(originalName);
+			this.renameHistory(originalName, targetTitle);
+
+			// Update story list replacing originalName with targetTitle
+			const storyList = $tw.wiki.getTiddlerList("$:/StoryList");
+			const index = storyList.indexOf(originalName);
+			if (index !== -1) {
+				storyList[index] = targetTitle;
+				$tw.wiki.addTiddler(new $tw.Tiddler({title: "$:/StoryList", list: storyList}));
+			}
+		}
 
 		$tw.wiki.addTiddler(new $tw.Tiddler(restoredFields));
-		console.log("Restored:", revisionTitle, "→", originalName);
+
+		if (wasEnabled === "yes") {
+			$tw.wiki.addTiddler(new $tw.Tiddler({ title: "$:/config/mblackman/revision-history/enabled", text: "yes" }));
+		}
+
+		console.log("Restored:", revisionTitle, "→", targetTitle);
+		return targetTitle;
 	}
 
 	// Reconstruct the full text of a revision, resolving diff/delta chains as needed.
