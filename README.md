@@ -22,6 +22,15 @@ npm run build-all      # also builds the demo wiki to build/index.html
 npm run serve          # dev server at localhost:8080
 ```
 
+## Testing
+
+```bash
+npm test               # run all tests
+npm run test:coverage  # run with coverage report
+```
+
+Tests use Jest with a mock TiddlyWiki runtime. Coverage targets ~90% for core code paths.
+
 ## Installation
 
 Install it from the [Demo](https://mblackman.github.io/tiddlywiki-revision-history/) page by dragging and dropping the plugin.
