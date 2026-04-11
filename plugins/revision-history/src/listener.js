@@ -6,6 +6,11 @@ export function startup() {
 	let revisor = new Revisor();
 	$tw.hooks.addHook("th-saving-tiddler", (newTiddler, draft) => {
 		if (!draft) return newTiddler; // Guard for TW < 5.3.x
+
+		// Respect the global pause toggle
+		const enabled = $tw.wiki.getTiddlerText("$:/config/mblackman/revision-history/enabled", "yes");
+		if (enabled !== "yes") return newTiddler;
+
 		// Not overwriting anything; no revision necessary!
 		let oldTitle = draft.getFieldString("draft.of");
 		if (!oldTitle) return newTiddler;
@@ -18,6 +23,13 @@ export function startup() {
 		if ($tw.wiki.isShadowTiddler(newTitle)) return newTiddler;
 		if ($tw.wiki.isSystemTiddler(oldTitle)) return newTiddler;
 		if ($tw.wiki.isShadowTiddler(oldTitle)) return newTiddler;
+
+		// Per-tiddler exclusion filter
+		const excludeFilter = $tw.wiki.getTiddlerText("$:/config/mblackman/revision-history/exclude-filter", "");
+		if (excludeFilter && excludeFilter.trim()) {
+			const excluded = $tw.wiki.filterTiddlers(excludeFilter);
+			if (excluded.indexOf(newTitle) !== -1) return newTiddler;
+		}
 
     	if (oldTitle != newTitle) {
     		revisor.renameHistory(oldTitle, newTitle);
@@ -63,8 +75,21 @@ export function startup() {
 	$tw.hooks.addHook("th-deleting-tiddler", function(tiddler) {
 		if (!tiddler) return tiddler;
 		const title = tiddler.fields.title;
+
+		// Respect the global pause toggle
+		const enabled = $tw.wiki.getTiddlerText("$:/config/mblackman/revision-history/enabled", "yes");
+		if (enabled !== "yes") return tiddler;
+
 		if ($tw.wiki.isSystemTiddler(title)) return tiddler;
 		if ($tw.wiki.isShadowTiddler(title)) return tiddler;
+
+		// Per-tiddler exclusion filter
+		const excludeFilter = $tw.wiki.getTiddlerText("$:/config/mblackman/revision-history/exclude-filter", "");
+		if (excludeFilter && excludeFilter.trim()) {
+			const excluded = $tw.wiki.filterTiddlers(excludeFilter);
+			if (excluded.indexOf(title) !== -1) return tiddler;
+		}
+
 		revisor.captureDeletedState(title, tiddler);
 		return tiddler;
 	});

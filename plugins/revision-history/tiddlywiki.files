@@ -33,6 +33,15 @@
 				"caption": "Deleted Tiddlers",
 				"tags": "$:/tags/SideBar"
 			}
+		},
+		{
+			"file": "ControlPanel.tid",
+			"fields": {
+				"type": "text/vnd.tiddlywiki",
+				"title": "$:/plugins/mblackman/revision-history/ControlPanel",
+				"caption": "Revision History",
+				"tags": "$:/tags/ControlPanel/SettingsTab"
+			}
 		}
 	]
 }

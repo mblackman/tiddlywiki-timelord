@@ -1,0 +1,15 @@
+! Revision Tracking
+
+<$checkbox tiddler="$:/config/mblackman/revision-history/enabled" field="text" checked="yes" unchecked="no" default="yes"> Enable revision tracking</$checkbox>
+
+//Uncheck before bulk imports, then re-enable when done.//
+
+---
+
+! Exclusion Filter
+
+Tiddlers matching this filter will not be tracked (leave blank to track all):
+
+<$edit-text tiddler="$:/config/mblackman/revision-history/exclude-filter" field="text" tag="input" default="" placeholder="e.g. [tag[NoTrack]]" class="tc-edit-texteditor"/>
+
+//Example: ''[tag[NoTrack]]'' skips any tiddler tagged ~NoTrack.//
