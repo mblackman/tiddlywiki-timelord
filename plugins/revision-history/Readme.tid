@@ -1,4 +1,4 @@
-title: $:/plugins/mblackman/revision-history/readme
+[[Repository|https://github.com/mblackman/tiddlywiki-revision-history]]
 
 This plugin adds the ability to automatically store and display revision history. It is dependent on a slight modification of the core to add an additional hook in navigator.js.
 

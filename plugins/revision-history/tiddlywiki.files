@@ -25,6 +25,14 @@
 			}
 		},
 		{
+			"file": "Readme.tid",
+			"fields": {
+				"type": "text/vnd.tiddlywiki",
+				"title": "$:/plugins/mblackman/revision-history/Readme",
+				"caption": "Revision History Readme"
+			}
+		},
+		{
 			"file": "Revisions.tid",
 			"fields": {
 				"type": "text/vnd.tiddlywiki",
@@ -43,11 +51,11 @@
 			}
 		},
 		{
-			"file": "ControlPanel.tid",
+			"file": "Settings.tid",
 			"fields": {
 				"type": "text/vnd.tiddlywiki",
-				"title": "$:/plugins/mblackman/revision-history/ControlPanel",
-				"caption": "Revision History",
+				"title": "$:/plugins/mblackman/revision-history/Settings",
+				"caption": "Revision History Settings",
 				"tags": "$:/tags/ControlPanel/SettingsTab"
 			}
 		}
