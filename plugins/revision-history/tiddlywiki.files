@@ -17,6 +17,14 @@
 			}
 		},
 		{
+			"file": "lib/filters.js",
+			"fields": {
+				"type": "application/javascript",
+				"title": "$:/plugins/mblackman/revision-history/filters.js",
+				"module-type": "filteroperator"
+			}
+		},
+		{
 			"file": "Revisions.tid",
 			"fields": {
 				"type": "text/vnd.tiddlywiki",

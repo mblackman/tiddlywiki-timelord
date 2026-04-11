@@ -4,7 +4,7 @@
 <$set name="diffStatePrev" value={{{[<revisionTitle>addprefix[$:/state/revision-history/diff-prev/]]}}}>
 <$set name="prevRevTitle" value={{{[tag<revisionTag>sort[revision-date]before<revisionTitle>last[]]}}}>
 <$set name="isBinary" value={{{[<revisionTitle>has[type]get[type]!prefix[text/]then[yes]else[no]]}}}>
-<$set name="charCount" value={{{[<revisionTitle>get[text]length[]]}}}>
+<$set name="charCount" value={{{[<revisionTitle>reconstructtext[]length[]]}}}>
 <$link tiddler=<<revisionTitle>>><$view tiddler=<<revisionTitle>> field="modified" format="date" template="DDth MMM YYYY at 0hh:0mm"/></$link> by ''<$view tiddler=<<revisionTitle>> field="modifier"/>'' · <<charCount>> chars
 <$reveal type="nomatch" state="$:/state/revision-history/restore-confirm" text=<<revisionTitle>>>
 <$button>Restore<$action-setfield $tiddler="$:/state/revision-history/restore-confirm" $value=<<revisionTitle>>/></$button>
@@ -29,13 +29,15 @@ Restore this version? <$button>Yes<$action-sendmessage $message="tm-restore-revi
 <$reveal type="match" state=<<diffStateCurrent>> text="open">
 <$list filter="[<isBinary>match[yes]]" variable="ignored">Binary content — cannot diff.</$list>
 <$list filter="[<isBinary>match[no]]" variable="ignored">
-<$diff-text source={{{[<revisionTitle>get[text]]}}} dest={{{[<parentTitle>get[text]]}}}/>
+<$diff-text source={{{[<revisionTitle>reconstructtext[]]}}} dest={{{[<parentTitle>reconstructtext[]]}}}/>
+
 </$list>
 </$reveal>
 <$reveal type="match" state=<<diffStatePrev>> text="open">
 <$list filter="[<isBinary>match[yes]]" variable="ignored">Binary content — cannot diff.</$list>
 <$list filter="[<isBinary>match[no]]" variable="ignored">
-<$diff-text source={{{[<prevRevTitle>get[text]]}}} dest={{{[<revisionTitle>get[text]]}}}/>
+<$diff-text source={{{[<prevRevTitle>reconstructtext[]]}}} dest={{{[<revisionTitle>reconstructtext[]]}}}/>
+
 </$list>
 </$reveal>
 <hr/>

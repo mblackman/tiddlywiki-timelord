@@ -1,6 +1,25 @@
 "use strict";
 import { Revisor, generateTag } from './revisor.js';
 
+// Returns true if any meaningful field changed between oldTiddler and newTiddler.
+// Skips fields that change automatically (timestamps, draft metadata, plugin-managed fields).
+function tiddlerFieldsChanged(oldTiddler, newTiddler) {
+	const skip = new Set([
+		'title', 'modified', 'modifier', 'created', 'creator',
+		'draft.of', 'draft.title', 'revision-tag'
+	]);
+	const allFields = new Set([
+		...Object.keys(oldTiddler.fields),
+		...Object.keys(newTiddler.fields)
+	]);
+	for (const field of allFields) {
+		if (skip.has(field)) continue;
+		if (oldTiddler.getFieldString(field) !== newTiddler.getFieldString(field))
+			return true;
+	}
+	return false;
+}
+
 // Constructs a revisor and listens for changes to put in it
 export function startup() {
 	let revisor = new Revisor();
@@ -38,16 +57,13 @@ export function startup() {
         // Add the new title tag, since the title may have changed
     	newTiddler = new $tw.Tiddler(newTiddler, { "revision-tag": generateTag(newTitle)});
 
-    	// If we're overwriting...
+    	// If we're overwriting an existing tiddler via rename...
     	if (oldTitle != newTitle && $tw.wiki.tiddlerExists(newTitle)) {
     		revisor.addToHistory(newTitle, $tw.wiki.getTiddler(newTitle));
     	}
 
-    	let newText = newTiddler.getFieldString("text");
-    	let oldText = oldTiddler.getFieldString("text");
-
-    	// No textual changes!
-    	if (oldText == newText) {
+    	// No meaningful field changes — skip revision
+    	if (!tiddlerFieldsChanged(oldTiddler, newTiddler)) {
     		return newTiddler;
     	}
 
