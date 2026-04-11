@@ -2,9 +2,17 @@
 [[$caption$|$title$]]
 \end
 
-<$list filter="[tag{!!revision-tag}sort[revision-date]reverse[]]">
+<$set name="parentTitle" value=<<currentTiddler>>>
+<$set name="revisionTag" value={{!!revision-tag}}>
+<$list filter="[tag<revisionTag>sort[revision-date]reverse[]]">
 <$set name="revisionTitle" value=<<currentTiddler>>>
+<$set name="diffStateCurrent" value={{{[<revisionTitle>addprefix[$:/state/revision-history/diff-current/]]}}}>
+<$set name="diffStatePrev" value={{{[<revisionTitle>addprefix[$:/state/revision-history/diff-prev/]]}}}>
+<$set name="prevRevTitle" value={{{[tag<revisionTag>sort[revision-date]before<revisionTitle>last[]]}}}>
+<$set name="isBinary" value={{{[<revisionTitle>has[type]get[type]!prefix[text/]then[yes]else[no]]}}}>
+
 <$macrocall $name="listlink" caption={{!!revision-caption}} title=<<revisionTitle>> />
+
 <$reveal type="nomatch" state="$:/state/revision-history/restore-confirm" text=<<revisionTitle>>>
 <$button>Restore<$action-setfield $tiddler="$:/state/revision-history/restore-confirm" $value=<<revisionTitle>>/></$button>
 </$reveal>
@@ -13,6 +21,43 @@ Restore this version?
 <$button>Yes<$action-sendmessage $message="tm-restore-revision" revisionTitle=<<revisionTitle>>/><$action-setfield $tiddler="$:/state/revision-history/restore-confirm" $value=""/></$button>
 <$button>No<$action-setfield $tiddler="$:/state/revision-history/restore-confirm" $value=""/></$button>
 </$reveal>
+
+<$reveal type="nomatch" state=<<diffStateCurrent>> text="open">
+<$button set=<<diffStateCurrent>> setTo="open">Diff vs. current</$button>
+</$reveal>
+<$reveal type="match" state=<<diffStateCurrent>> text="open">
+<$button set=<<diffStateCurrent>> setTo="">Close diff</$button>
+</$reveal>
+
+<$list filter="[<prevRevTitle>is[tiddler]]" variable="ignored">
+<$reveal type="nomatch" state=<<diffStatePrev>> text="open">
+<$button set=<<diffStatePrev>> setTo="open">Diff vs. previous</$button>
+</$reveal>
+<$reveal type="match" state=<<diffStatePrev>> text="open">
+<$button set=<<diffStatePrev>> setTo="">Close diff</$button>
+</$reveal>
+</$list>
+
+<$reveal type="match" state=<<diffStateCurrent>> text="open">
+<$list filter="[<isBinary>match[yes]]" variable="ignored">Binary content — cannot diff.</$list>
+<$list filter="[<isBinary>match[no]]" variable="ignored">
+<$diff-text source={{{[<revisionTitle>get[text]]}}} dest={{{[<parentTitle>get[text]]}}}/>
+</$list>
+</$reveal>
+
+<$reveal type="match" state=<<diffStatePrev>> text="open">
+<$list filter="[<isBinary>match[yes]]" variable="ignored">Binary content — cannot diff.</$list>
+<$list filter="[<isBinary>match[no]]" variable="ignored">
+<$diff-text source={{{[<prevRevTitle>get[text]]}}} dest={{{[<revisionTitle>get[text]]}}}/>
+</$list>
+</$reveal>
+
 <br/>
 </$set>
+</$set>
+</$set>
+</$set>
+</$set>
 </$list>
+</$set>
+</$set>
