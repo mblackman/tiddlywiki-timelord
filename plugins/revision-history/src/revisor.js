@@ -5,10 +5,15 @@
 // Fields:
 //   revision-of:            original tiddler name (the source of truth for lookup + restore)
 //   revision-date:          modified timestamp in ms (used for sorting)
-//   revision-data:          JSON of all original fields including text (authoritative for restore)
-//   revision-storage:       "full" (snapshot) or "diff" (text in revision-data is a patch string)
+//   revision-data:          JSON of tiddler fields (see revision-storage for format)
+//   revision-storage:       "full" (all fields, full text), "diff" (all fields, text is patch),
+//                           or "delta" (only changed fields, text if present is a patch)
 //   revision-text-hash:     djb2 hash of the original full text (for dedup)
+//   revision-full-hash:     djb2 hash of full serialized field state (data integrity)
+//   revision-content-hash:  djb2 hash of meaningful fields only (for dedup, ignores auto-fields)
 //   revision-deleted:       "yes" if this captures the final state before deletion
+//   revision-changed-fields: space-separated list of meaningful fields that changed
+//   revision-number:        sequential revision number (1-based)
 
 const baseName = "$:/plugins/mblackman/revision-history/revisions/";
 const SNAPSHOT_INTERVAL = 10;
@@ -22,16 +27,42 @@ function getDmp() {
 	return _dmp;
 }
 
-// Serialize all tiddler fields (including text) into a consistently-ordered JSON string.
-// Used as the authoritative record of full tiddler state for dedup and restore.
-function serializeFields(tiddler) {
+// Extract all tiddler fields as a plain object.
+function extractFields(tiddler) {
 	const data = {};
 	for (const key of Object.keys(tiddler.fields)) {
 		data[key] = tiddler.getFieldString(key);
 	}
+	return data;
+}
+
+// Serialize all tiddler fields (including text) into a consistently-ordered JSON string.
+// Used as the authoritative data for storage and restore.
+function serializeFields(tiddler) {
+	const data = extractFields(tiddler);
 	const sorted = {};
 	for (const key of Object.keys(data).sort()) {
 		sorted[key] = data[key];
+	}
+	return JSON.stringify(sorted);
+}
+
+// Fields that change automatically on every save — not considered "meaningful" changes.
+const AUTO_FIELDS = new Set([
+	'title', 'modified', 'modifier', 'created', 'creator',
+	'draft.of', 'draft.title', 'revision-tag'
+]);
+
+// Serialize only meaningful fields (excluding auto-managed ones) into a consistently-ordered
+// JSON string. Used for dedup — two tiddler states that differ only in auto-fields (modified,
+// revision-tag, etc.) are considered identical for revision purposes.
+function serializeContentFields(tiddler) {
+	const data = extractFields(tiddler);
+	const sorted = {};
+	for (const key of Object.keys(data).sort()) {
+		if (!AUTO_FIELDS.has(key)) {
+			sorted[key] = data[key];
+		}
 	}
 	return JSON.stringify(sorted);
 }
@@ -40,18 +71,27 @@ export class Revisor {
 	constructor() {}
 
 	addToHistory(name, tiddler) {
+		const candidateFields = extractFields(tiddler);
 		const candidateData = serializeFields(tiddler);
-		const candidateText = tiddler.getFieldString("text");
+		const candidateText = candidateFields.text || "";
 		const candidateTextHash = hashName(candidateText);
-		// Hash of the full state (all fields including text) before any diff compression.
-		// Used for dedup — comparable regardless of whether a revision is stored as full or diff.
+		// Hash of the full state (all fields including text) — stored on the revision for reference.
 		const candidateFullHash = hashName(candidateData);
+		// Hash of only meaningful fields (excluding auto-managed ones like modified, revision-tag).
+		// Used for dedup — a tiddler restored from an old revision should match the original revision
+		// even though auto-fields differ.
+		const candidateContentHash = hashName(serializeContentFields(tiddler));
 
-		// Dedup: skip if an identical revision already exists
+		// Dedup: skip if a revision with identical meaningful content already exists
 		const isDuplicate = this.getHistory(name).some(title => {
 			const rev = $tw.wiki.getTiddler(title);
 			if (!rev) return false;
-			// New format: compare full-state hash (works for both full and diff storage)
+			// Prefer content hash (ignores auto-fields) for accurate dedup
+			const existingContentHash = rev.getFieldString("revision-content-hash");
+			if (existingContentHash) {
+				return existingContentHash === candidateContentHash;
+			}
+			// Fall back to full hash for revisions created before content hash existed
 			const existingFullHash = rev.getFieldString("revision-full-hash");
 			if (existingFullHash) {
 				return existingFullHash === candidateFullHash;
@@ -61,48 +101,79 @@ export class Revisor {
 		});
 		if (isDuplicate) return;
 
-		let modified = tiddler.fields.modified;
-		if (modified == null) modified = tiddler.fields.created;
-		if (modified == null) modified = new Date();
+		// revision-date and the revision tiddler's modified field always reflect
+		// when the revision was captured, not the original tiddler's modification time.
+		// The original modified timestamp is preserved inside revision-data.
+		const capturedAt = new Date();
 
-		// Determine storage mode: snapshot or diff
 		const history = this.getHistory(name);
-		let storedData = candidateData;
-		let storageMode = "full";
+		const revisionNumber = history.length + 1;
 
-		if (!this._shouldStoreSnapshot(history)) {
-			const prevText = this._getPreviousRevisionText(history);
-			if (prevText !== null) {
-				const dmp = getDmp();
-				const patches = dmp.patch_make(prevText, candidateText);
-				const patchText = dmp.patch_toText(patches);
-				// Only use diff if it's actually smaller than full text
-				if (patchText.length < candidateText.length) {
-					// Replace full text with patch in the stored JSON
-					const dataObj = JSON.parse(candidateData);
-					dataObj.text = patchText;
-					storedData = JSON.stringify(dataObj);
-					storageMode = "diff";
+		// Get previous revision's full field state for delta computation
+		const prevFields = history.length > 0 ? this._getPreviousRevisionFields(history) : null;
+
+		// Compute which meaningful fields changed (for display metadata)
+		const changedFieldNames = this._getChangedFieldNames(candidateFields, prevFields);
+
+		let storedData, storageMode;
+
+		if (this._shouldStoreSnapshot(history) || prevFields === null) {
+			// Full snapshot: store all fields with full text
+			storedData = candidateData;
+			storageMode = "full";
+		} else {
+			// Delta: store only changed fields, text as a patch
+			const delta = {};
+			const allKeys = new Set([...Object.keys(candidateFields), ...Object.keys(prevFields)]);
+			for (const key of allKeys) {
+				const oldVal = prevFields[key];
+				const newVal = candidateFields[key];
+				if (oldVal !== newVal) {
+					delta[key] = newVal !== undefined ? newVal : null; // null = field removed
 				}
+			}
+
+			// Text diff compression
+			if (delta.hasOwnProperty("text") && delta.text !== null) {
+				const prevText = prevFields.text || "";
+				const dmp = getDmp();
+				const patches = dmp.patch_make(prevText, delta.text);
+				const patchText = dmp.patch_toText(patches);
+				if (patchText.length < delta.text.length) {
+					delta.text = patchText;
+					storedData = JSON.stringify(delta);
+					storageMode = "delta";
+				} else {
+					// Patch larger than full text — fall back to full snapshot
+					storedData = candidateData;
+					storageMode = "full";
+				}
+			} else {
+				// Text didn't change (or was removed) — store delta as-is
+				storedData = JSON.stringify(delta);
+				storageMode = "delta";
 			}
 		}
 
 		const entry = new $tw.Tiddler({
 			title: generateTitle({ name, timestampMs: Date.now() }),
 			type: tiddler.getFieldString("type") || "text/vnd.tiddlywiki",
-			modified: modified,
+			modified: capturedAt,
 			modifier: tiddler.getFieldString("modifier") || "<anon>",
-			"revision-date": modified.getTime ? modified.getTime() : modified,
+			"revision-date": capturedAt.getTime(),
 			"revision-of": name,
 			"revision-data": storedData,
 			"revision-storage": storageMode,
 			"revision-text-hash": candidateTextHash,
 			"revision-full-hash": candidateFullHash,
+			"revision-content-hash": candidateContentHash,
+			"revision-changed-fields": changedFieldNames.join(" "),
+			"revision-number": revisionNumber,
 			tags: "[[" + generateTag(name) + "]]",
 		});
 
 		$tw.wiki.addTiddler(entry);
-		console.log("Added tiddler to history:", name, "(" + storageMode + ")");
+		console.log("Added tiddler to history:", name, "(" + storageMode + ", rev #" + revisionNumber + ")");
 	}
 
 	captureDeletedState(name, tiddler) {
@@ -182,30 +253,13 @@ export class Revisor {
 			this.addToHistory(originalName, currentTiddler);
 		}
 
-		// Reconstruct the full text (resolves diffs if needed)
-		const fullText = this.reconstructText(revisionTitle);
+		// Reconstruct the full field state (handles full/diff/delta chains)
+		const fullFields = this.reconstructAllFields(revisionTitle);
 
-		// Try new format first (revision-data JSON)
-		const revisionDataStr = revision.getFieldString("revision-data");
-		let restoredFields;
-
-		if (revisionDataStr) {
-			const data = JSON.parse(revisionDataStr);
-			restoredFields = Object.assign({}, data, {
-				title: originalName,
-				text: fullText,
-				"revision-tag": generateTag(originalName),
-			});
-		} else {
-			// Old format: copy fields directly from revision tiddler
-			restoredFields = Object.assign({}, revision.fields, {
-				title: originalName,
-				text: fullText,
-				tags: revision.fields["revision-original-tags"] || "",
-				"revision-tag": generateTag(originalName),
-			});
-			delete restoredFields["revision-original-tags"];
-		}
+		const restoredFields = Object.assign({}, fullFields, {
+			title: originalName,
+			"revision-tag": generateTag(originalName),
+		});
 
 		// Strip revision-specific fields that should not appear on the live tiddler
 		delete restoredFields["revision-date"];
@@ -214,25 +268,27 @@ export class Revisor {
 		delete restoredFields["revision-storage"];
 		delete restoredFields["revision-text-hash"];
 		delete restoredFields["revision-full-hash"];
+		delete restoredFields["revision-content-hash"];
 		delete restoredFields["revision-deleted"];
+		delete restoredFields["revision-changed-fields"];
+		delete restoredFields["revision-number"];
 
 		$tw.wiki.addTiddler(new $tw.Tiddler(restoredFields));
 		console.log("Restored:", revisionTitle, "→", originalName);
 	}
 
-	// Reconstruct the full text of a revision, resolving diff chains as needed.
-	// Text is stored inside the revision-data JSON field.
+	// Reconstruct the full text of a revision, resolving diff/delta chains as needed.
 	// For "full" or old-format revisions, returns text directly.
 	// For "diff" revisions, walks back to the nearest snapshot and applies patches forward.
+	// For "delta" revisions, text may be absent (didn't change) — carries forward from previous.
 	reconstructText(revisionTitle) {
 		const revision = $tw.wiki.getTiddler(revisionTitle);
 		if (!revision) return "";
 
 		const storage = revision.getFieldString("revision-storage");
-		const textFromRevision = this._getRevisionText(revision);
 
-		if (storage !== "diff") {
-			return textFromRevision;
+		if (storage !== "diff" && storage !== "delta") {
+			return this._getRevisionText(revision);
 		}
 
 		// Need to walk back to nearest snapshot and apply patches forward
@@ -245,30 +301,57 @@ export class Revisor {
 		// sorted is now oldest-first
 
 		const targetIdx = sorted.findIndex(t => t.fields.title === revisionTitle);
-		if (targetIdx === -1) return textFromRevision;
+		if (targetIdx === -1) return this._getRevisionText(revision);
 
-		// Walk backward to find nearest snapshot
+		// Walk backward to find nearest full snapshot
 		let snapshotIdx = targetIdx;
-		while (snapshotIdx >= 0 && sorted[snapshotIdx].getFieldString("revision-storage") === "diff") {
+		while (snapshotIdx >= 0) {
+			const s = sorted[snapshotIdx].getFieldString("revision-storage");
+			if (s !== "diff" && s !== "delta") break;
 			snapshotIdx--;
 		}
 
 		if (snapshotIdx < 0) {
 			console.warn("No snapshot found for revision chain:", revisionTitle);
-			return textFromRevision;
+			return this._getRevisionText(revision);
 		}
 
 		let text = this._getRevisionText(sorted[snapshotIdx]);
 		const dmp = getDmp();
 
 		for (let i = snapshotIdx + 1; i <= targetIdx; i++) {
-			const patchText = this._getRevisionText(sorted[i]);
-			const patches = dmp.patch_fromText(patchText);
-			const [newText, results] = dmp.patch_apply(patches, text);
-			if (results.some(r => !r)) {
-				console.warn("Patch application partially failed for:", sorted[i].fields.title);
+			const rev = sorted[i];
+			const revStorage = rev.getFieldString("revision-storage");
+
+			if (revStorage === "delta") {
+				// Delta: text key may or may not be present in revision-data
+				const dataStr = rev.getFieldString("revision-data");
+				if (dataStr) {
+					try {
+						const data = JSON.parse(dataStr);
+						if (data.hasOwnProperty("text") && data.text !== null) {
+							const patches = dmp.patch_fromText(data.text);
+							const [newText, results] = dmp.patch_apply(patches, text);
+							if (results.some(r => !r)) {
+								console.warn("Patch partially failed:", rev.fields.title);
+							}
+							text = newText;
+						}
+						// else: text didn't change in this delta, carry forward
+					} catch (e) {
+						console.warn("Failed to parse delta revision-data:", rev.fields.title);
+					}
+				}
+			} else {
+				// "diff" (old format): text is always a patch
+				const patchText = this._getRevisionText(rev);
+				const patches = dmp.patch_fromText(patchText);
+				const [newText, results] = dmp.patch_apply(patches, text);
+				if (results.some(r => !r)) {
+					console.warn("Patch partially failed:", rev.fields.title);
+				}
+				text = newText;
 			}
-			text = newText;
 		}
 
 		return text;
@@ -298,32 +381,132 @@ export class Revisor {
 		console.log("Removed history:", name);
 	}
 
+	// Reconstruct the full field state of a revision, resolving delta/diff chains.
+	// Returns a plain object with all original tiddler fields.
+	reconstructAllFields(revisionTitle) {
+		const revision = $tw.wiki.getTiddler(revisionTitle);
+		if (!revision) return {};
+
+		const storage = revision.getFieldString("revision-storage");
+		const dataStr = revision.getFieldString("revision-data");
+
+		// Old format (no revision-data): read fields from tiddler itself
+		if (!dataStr) {
+			const fields = {};
+			for (const key of Object.keys(revision.fields)) {
+				fields[key] = revision.getFieldString(key);
+			}
+			return fields;
+		}
+
+		if (storage === "full" || storage === "" || storage === "diff") {
+			// All fields present in revision-data
+			const fields = JSON.parse(dataStr);
+			if (storage === "diff") {
+				fields.text = this.reconstructText(revisionTitle);
+			}
+			return fields;
+		}
+
+		if (storage === "delta") {
+			// Walk back to nearest non-delta revision and apply deltas forward
+			const name = revision.getFieldString("revision-of");
+			const history = this.getHistory(name);
+			const sorted = history
+				.map(t => $tw.wiki.getTiddler(t))
+				.filter(t => t != null)
+				.sort((a, b) => (a.fields["revision-date"] || 0) - (b.fields["revision-date"] || 0));
+
+			const targetIdx = sorted.findIndex(t => t.fields.title === revisionTitle);
+			if (targetIdx === -1) return JSON.parse(dataStr);
+
+			// Walk backward to nearest non-delta revision
+			let baseIdx = targetIdx;
+			while (baseIdx >= 0 && sorted[baseIdx].getFieldString("revision-storage") === "delta") {
+				baseIdx--;
+			}
+
+			if (baseIdx < 0) {
+				console.warn("No base revision found for delta chain:", revisionTitle);
+				return JSON.parse(dataStr);
+			}
+
+			// Get base revision's full fields (handles "full" and "diff")
+			let fields = this.reconstructAllFields(sorted[baseIdx].fields.title);
+
+			// Apply deltas forward (non-text fields only; text handled by reconstructText)
+			for (let i = baseIdx + 1; i <= targetIdx; i++) {
+				const rev = sorted[i];
+				if (rev.getFieldString("revision-storage") !== "delta") continue;
+				try {
+					const deltaData = JSON.parse(rev.getFieldString("revision-data"));
+					for (const key of Object.keys(deltaData)) {
+						if (key === "text") continue;
+						if (deltaData[key] === null) {
+							delete fields[key];
+						} else {
+							fields[key] = deltaData[key];
+						}
+					}
+				} catch (e) {
+					console.warn("Failed to parse delta:", rev.fields.title);
+				}
+			}
+
+			// Resolve text via chain-walking
+			fields.text = this.reconstructText(revisionTitle);
+			return fields;
+		}
+
+		// Unknown storage mode — best effort
+		return JSON.parse(dataStr);
+	}
+
 	// --- Private helpers ---
 
 	_shouldStoreSnapshot(history) {
 		if (history.length === 0) return true;
-		// Sort newest-first and count consecutive diffs since last snapshot
+		// Sort newest-first and count consecutive non-snapshot revisions since last snapshot
 		const sorted = history
 			.map(title => $tw.wiki.getTiddler(title))
 			.filter(t => t != null)
 			.sort((a, b) => (b.fields["revision-date"] || 0) - (a.fields["revision-date"] || 0));
 		let countSinceSnapshot = 0;
 		for (const rev of sorted) {
-			if (rev.getFieldString("revision-storage") !== "diff") break;
+			const s = rev.getFieldString("revision-storage");
+			if (s !== "diff" && s !== "delta") break;
 			countSinceSnapshot++;
 		}
 		return countSinceSnapshot >= SNAPSHOT_INTERVAL - 1;
 	}
 
-	_getPreviousRevisionText(history) {
+	_getPreviousRevisionFields(history) {
 		if (history.length === 0) return null;
-		// Most recent revision is the "previous" one we diff against
 		const sorted = history
 			.map(title => $tw.wiki.getTiddler(title))
 			.filter(t => t != null)
 			.sort((a, b) => (b.fields["revision-date"] || 0) - (a.fields["revision-date"] || 0));
 		if (sorted.length === 0) return null;
-		return this.reconstructText(sorted[0].fields.title);
+		return this.reconstructAllFields(sorted[0].fields.title);
+	}
+
+	_getChangedFieldNames(currentFields, prevFields) {
+		const changed = [];
+		if (!prevFields) {
+			// First revision — all non-auto fields are "new"
+			for (const key of Object.keys(currentFields)) {
+				if (!AUTO_FIELDS.has(key)) changed.push(key);
+			}
+			return changed;
+		}
+		const allKeys = new Set([...Object.keys(currentFields), ...Object.keys(prevFields)]);
+		for (const key of allKeys) {
+			if (AUTO_FIELDS.has(key)) continue;
+			if ((currentFields[key] || "") !== (prevFields[key] || "")) {
+				changed.push(key);
+			}
+		}
+		return changed;
 	}
 }
 

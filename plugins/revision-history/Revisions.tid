@@ -2,10 +2,12 @@
 <$set name="revisionTitle" value=<<currentTiddler>>>
 <$set name="diffStateCurrent" value={{{[<revisionTitle>addprefix[$:/state/revision-history/diff-current/]]}}}>
 <$set name="diffStatePrev" value={{{[<revisionTitle>addprefix[$:/state/revision-history/diff-prev/]]}}}>
+<$set name="fieldChangesState" value={{{[<revisionTitle>addprefix[$:/state/revision-history/field-changes/]]}}}>
 <$set name="prevRevTitle" value={{{[tag<revisionTag>sort[revision-date]before<revisionTitle>last[]]}}}>
 <$set name="isBinary" value={{{[<revisionTitle>has[type]get[type]!prefix[text/]then[yes]else[no]]}}}>
 <$set name="charCount" value={{{[<revisionTitle>reconstructtext[]length[]]}}}>
-<$link tiddler=<<revisionTitle>>><$view tiddler=<<revisionTitle>> field="modified" format="date" template="DDth MMM YYYY at 0hh:0mm"/></$link> by ''<$view tiddler=<<revisionTitle>> field="modifier"/>'' · <<charCount>> chars
+<$set name="revNum" value={{{[<revisionTitle>get[revision-number]]}}}>
+<$list filter="[<revNum>!match[]]" variable="ignored">##<<revNum>> — </$list><$link tiddler=<<revisionTitle>>><$view tiddler=<<revisionTitle>> field="modified" format="date" template="DDth MMM YYYY at 0hh:0mm"/></$link> by ''<$view tiddler=<<revisionTitle>> field="modifier"/>'' · <<charCount>> chars
 <$reveal type="nomatch" state="$:/state/revision-history/restore-confirm" text=<<revisionTitle>>>
 <$button>Restore<$action-setfield $tiddler="$:/state/revision-history/restore-confirm" $value=<<revisionTitle>>/></$button>
 </$reveal>
@@ -26,6 +28,19 @@ Restore this version? <$button>Yes<$action-sendmessage $message="tm-restore-revi
 <$button set=<<diffStatePrev>> setTo="">Close diff</$button>
 </$reveal>
 </$list>
+<$list filter="[<revisionTitle>revisionchangedfields[]first[]]" variable="firstChangedField">
+<$reveal type="nomatch" state=<<fieldChangesState>> text="open">
+<$button set=<<fieldChangesState>> setTo="open" class="tc-btn-invisible tc-tiddlylink">Fields: <$list filter="[<revisionTitle>revisionchangedfields[]]" variable="fieldName" counter="cnt">''<<fieldName>>''<$list filter="[<cnt-last>match[no]]" variable="ignored">, </$list></$list></$button>
+</$reveal>
+<$reveal type="match" state=<<fieldChangesState>> text="open">
+<$button set=<<fieldChangesState>> setTo="" class="tc-btn-invisible tc-tiddlylink">Fields ▾</$button>
+<div style="margin-left: 1em; font-size: 0.9em; color: #666;">
+<$list filter="[<revisionTitle>revisionchanges[]]" variable="changeDesc">
+<div><<changeDesc>></div>
+</$list>
+</div>
+</$reveal>
+</$list>
 <$reveal type="match" state=<<diffStateCurrent>> text="open">
 <$list filter="[<isBinary>match[yes]]" variable="ignored">Binary content — cannot diff.</$list>
 <$list filter="[<isBinary>match[no]]" variable="ignored">
@@ -41,7 +56,7 @@ Restore this version? <$button>Yes<$action-sendmessage $message="tm-restore-revi
 </$list>
 </$reveal>
 <hr/>
-</$set></$set></$set></$set></$set></$set>
+</$set></$set></$set></$set></$set></$set></$set></$set>
 \end
 
 <$set name="parentTitle" value=<<currentTiddler>>>
