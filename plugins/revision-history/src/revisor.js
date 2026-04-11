@@ -46,6 +46,22 @@ export class Revisor {
 		console.log("Added tiddler to history: ", name);
 	}
 
+	captureDeletedState(name, tiddler) {
+		const newText = tiddler.getFieldString("text");
+		// Try to record final content — dedup in addToHistory will skip if already captured
+		this.addToHistory(name, tiddler);
+		// Find the revision whose text matches the final state and mark it deleted
+		const history = this.getHistory(name);
+		const matchingRevs = history
+			.map(title => $tw.wiki.getTiddler(title))
+			.filter(rev => rev && rev.getFieldString("text") === newText)
+			.sort((a, b) => (b.fields["revision-date"] || 0) - (a.fields["revision-date"] || 0));
+		if (matchingRevs.length > 0) {
+			$tw.wiki.addTiddler(new $tw.Tiddler(matchingRevs[0], { "revision-deleted": "yes" }));
+		}
+		console.log("Captured deleted state for:", name);
+	}
+
 	renameHistory(oldName, newName) {
 		if (oldName == newName) return;
 		if (!oldName.trim() || !newName.trim()) return;
@@ -81,6 +97,16 @@ export class Revisor {
 		return this.getHistory(name).length != 0;
 	}
 
+	// Returns the title of the most recent revision marked revision-deleted, or null if none
+	getLatestDeletedRevision(name) {
+		const history = this.getHistory(name);
+		const deletedRevs = history
+			.map(title => $tw.wiki.getTiddler(title))
+			.filter(rev => rev && rev.fields["revision-deleted"])
+			.sort((a, b) => (b.fields["revision-date"] || 0) - (a.fields["revision-date"] || 0));
+		return deletedRevs.length > 0 ? deletedRevs[0].fields.title : null;
+	}
+
 	restoreFromRevision(revisionTitle) {
 		const revision = $tw.wiki.getTiddler(revisionTitle);
 		if (!revision) return;
@@ -103,6 +129,7 @@ export class Revisor {
 		delete restoredFields["revision-date"];
 		delete restoredFields["revision-caption"];
 		delete restoredFields["revision-original-tags"];
+		delete restoredFields["revision-deleted"];
 
 		$tw.wiki.addTiddler(new $tw.Tiddler(restoredFields));
 		console.log("Restored:", revisionTitle, "→", originalName);

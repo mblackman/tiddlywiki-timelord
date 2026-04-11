@@ -24,6 +24,15 @@
 				"caption": "Revisions",
 				"tags": "$:/tags/TiddlerInfo"
 			}
+		},
+		{
+			"file": "DeletedTiddlers.tid",
+			"fields": {
+				"type": "text/vnd.tiddlywiki",
+				"title": "$:/plugins/mblackman/revision-history/DeletedTiddlers",
+				"caption": "Deleted Tiddlers",
+				"tags": "$:/tags/SideBar"
+			}
 		}
 	]
 }

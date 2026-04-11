@@ -50,4 +50,22 @@ export function startup() {
 			revisor.restoreFromRevision(revisionTitle);
 		}
 	});
+
+	$tw.rootWidget.addEventListener("tm-restore-deleted-tiddler", function(event) {
+		const tiddlerName = event.paramObject && event.paramObject.tiddlerName;
+		if (!tiddlerName) return;
+		const revisionTitle = revisor.getLatestDeletedRevision(tiddlerName);
+		if (revisionTitle) {
+			revisor.restoreFromRevision(revisionTitle);
+		}
+	});
+
+	$tw.hooks.addHook("th-deleting-tiddler", function(tiddler) {
+		if (!tiddler) return tiddler;
+		const title = tiddler.fields.title;
+		if ($tw.wiki.isSystemTiddler(title)) return tiddler;
+		if ($tw.wiki.isShadowTiddler(title)) return tiddler;
+		revisor.captureDeletedState(title, tiddler);
+		return tiddler;
+	});
 }
