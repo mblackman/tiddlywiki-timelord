@@ -7,7 +7,7 @@
 <$set name="isBinary" value={{{[<revisionTitle>has[type]get[type]!prefix[text/]then[yes]else[no]]}}}>
 <$set name="charCount" value={{{[<revisionTitle>reconstructtext[]length[]]}}}>
 <$set name="revNum" value={{{[<revisionTitle>get[revision-number]]}}}>
-<$list filter="[<revNum>!match[]]" variable="ignored">##<<revNum>> — </$list><$link tiddler=<<revisionTitle>>><$view tiddler=<<revisionTitle>> field="modified" format="date" template="DDth MMM YYYY at 0hh:0mm"/></$link> by ''<$view tiddler=<<revisionTitle>> field="modifier"/>'' · <<charCount>> chars
+<$list filter="[<revNum>!match[]]" variable="ignored">#<<revNum>> · </$list><$link tiddler=<<revisionTitle>>><$view tiddler=<<revisionTitle>> field="modified" format="date" template="DDth MMM YYYY at 0hh:0mm"/></$link> by ''<$view tiddler=<<revisionTitle>> field="modifier"/>'' · <<charCount>> chars
 <$reveal type="nomatch" state="$:/state/revision-history/restore-confirm" text=<<revisionTitle>>>
 <$button>Restore<$action-setfield $tiddler="$:/state/revision-history/restore-confirm" $value=<<revisionTitle>>/></$button>
 </$reveal>
