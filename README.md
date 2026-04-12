@@ -19,8 +19,22 @@ A personal fork of [Ashlin Duncan's tiddlywiki-revision-history](https://github.
 npm install
 npm run build-plugin   # outputs build/revision-history.tid
 npm run build-all      # also builds the demo wiki to build/index.html
-npm run serve          # dev server at localhost:8080
 ```
+
+### Demo vs. debug wikis
+
+The repo ships two wiki directories:
+
+- **`demo/`** — the canonical wiki that gets built and published. Edits here are committed to the repo. `build-all` / `build-demo` always build from this directory.
+- **`debug/`** — a local sandbox for testing. Gitignored and persistent across dev-server restarts. Seeded from `demo/` on first use.
+
+```bash
+npm run serve          # dev server from debug/ at localhost:8081 (edits persist)
+npm run build-debug    # build debug/ to build/index.html (sandbox preview)
+npm run clean-debug    # wipe debug/ and re-seed from demo/ (explicit reset)
+```
+
+To promote a sandbox change into the canonical demo, copy the relevant `.tid` file from `debug/tiddlers/` into `demo/tiddlers/` and commit it.
 
 ## Testing
 

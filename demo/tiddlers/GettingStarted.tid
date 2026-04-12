@@ -1,0 +1,8 @@
+title: GettingStarted
+tags: 
+
+Welcome to the ''TiddlyWiki Revision History'' plugin demo! 
+This edition showcases the features of the plugin. 
+
+Navigating to the [[Showcase]] tiddler will show you a tiddler with pre-populated history. Click the Revisions tab in the tiddler info panel to view it in action!
+You can also try editing tiddlers or creating new ones, then returning to the Revisions tab to see the captured history and diffs.

@@ -3,7 +3,8 @@
     "plugins": [
         "tiddlywiki/tiddlyweb",
         "tiddlywiki/filesystem",
-        "tiddlywiki/highlight"
+        "tiddlywiki/highlight",
+        "mblackman/revision-history"
     ],
     "themes": [
         "tiddlywiki/vanilla",

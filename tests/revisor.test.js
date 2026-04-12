@@ -1,5 +1,5 @@
 const { resetTw } = require('./mock-tw');
-const { Revisor, generateTitle, generateTag, escapeRegExp } = require('../plugins/revision-history/src/revisor');
+const { Revisor, generateTitle, generateTag, escapeRegExp } = require('../plugins/mblackman/revision-history/src/revisor');
 const DMP = require('diff-match-patch');
 
 beforeEach(() => {

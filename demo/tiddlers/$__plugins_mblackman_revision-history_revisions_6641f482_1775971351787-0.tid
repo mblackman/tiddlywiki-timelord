@@ -1,0 +1,15 @@
+modified: 20260412052231787
+modifier: <anon>
+revision-changed-fields: text
+revision-content-hash: bb017b0a
+revision-data: {"text":"@@ -201,8 +201,60 @@\n icon). %0A\n+%0AYou can edit the body and see the change in a diff.\n","modified":"20260412052206217"}
+revision-date: 1775971351787
+revision-full-hash: 1bd85b0c
+revision-number: 2
+revision-of: Showcase of Title Update
+revision-storage: delta
+revision-text-hash: 68c37d1f
+revision-version: 1
+tags: $:/plugins/mblackman/revision-history/revisions/4038e91c
+title: $:/plugins/mblackman/revision-history/revisions/6641f482/1775971351787-0
+type: text/vnd.tiddlywiki

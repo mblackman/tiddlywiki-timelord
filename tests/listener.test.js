@@ -1,5 +1,5 @@
 const { resetTw } = require('./mock-tw');
-const { generateTag } = require('../plugins/revision-history/src/revisor');
+const { generateTag } = require('../plugins/mblackman/revision-history/src/revisor');
 
 // listener.js registers hooks on $tw at startup() call time, so we
 // re-require it fresh for each describe block via beforeEach.
@@ -13,7 +13,7 @@ beforeEach(() => {
   // Clear the module cache so startup() registers fresh hooks each time
   jest.resetModules();
   // Re-require to get a fresh module with new Revisor instance
-  ({ startup } = require('../plugins/revision-history/src/listener'));
+  ({ startup } = require('../plugins/mblackman/revision-history/src/listener'));
 });
 
 afterEach(() => {

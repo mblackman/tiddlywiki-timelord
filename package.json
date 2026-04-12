@@ -4,11 +4,14 @@
   "description": "",
   "main": "npm run build-all",
   "scripts": {
-    "build-all": "npm run build-plugin && npm run build-wiki",
-    "build-plugin": "npm run babel && tiddlywiki --output build --build revision-history",
-    "build-wiki": "tiddlywiki --output build --build index",
-    "babel": "babel plugins/revision-history/src -d plugins/revision-history/lib",
-    "serve": "npm run babel && tiddlywiki --listen",
+    "build-all": "npm run build-plugin && npm run build-demo",
+    "build-plugin": "npm run babel && cross-env TIDDLYWIKI_PLUGIN_PATH=plugins tiddlywiki demo --output build --build revision-history",
+    "build-demo": "cross-env TIDDLYWIKI_PLUGIN_PATH=plugins tiddlywiki demo --output build --build index",
+    "build-debug": "npm run babel && cross-env TIDDLYWIKI_PLUGIN_PATH=plugins tiddlywiki debug --output build --build index",
+    "babel": "babel plugins/mblackman/revision-history/src -d plugins/mblackman/revision-history/lib",
+    "clean-debug": "node -e \"const fs = require('fs'); fs.rmSync('debug', {recursive: true, force: true}); fs.cpSync('demo', 'debug', {recursive: true});\"",
+    "ensure-debug": "node -e \"const fs = require('fs'); if (!fs.existsSync('debug')) fs.cpSync('demo', 'debug', {recursive: true});\"",
+    "serve": "npm run ensure-debug && npm run babel && cross-env TIDDLYWIKI_PLUGIN_PATH=plugins tiddlywiki debug --listen port=8081",
     "test": "jest",
     "test:coverage": "jest --coverage"
   },
@@ -18,6 +21,7 @@
     "@babel/cli": "^7.28.6",
     "@babel/core": "^7.29.0",
     "@babel/plugin-transform-modules-commonjs": "^7.28.6",
+    "cross-env": "^10.1.0",
     "diff-match-patch": "^1.0.5",
     "jest": "^30.3.0",
     "tiddlywiki": "^5.3.8"
