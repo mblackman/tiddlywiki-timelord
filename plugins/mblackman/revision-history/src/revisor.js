@@ -19,6 +19,8 @@
 //                           branch reconstruction/migration logic on this value.
 //   revision-renamed-from:  previous title, set on the revision captured at a rename event
 //   revision-renamed-to:    new title, set on the revision captured at a rename event
+//   revision-broken-chain:  "yes" if chain-integrity check determined this revision is
+//                           unreconstructable (missing base, patch failure, or hash mismatch)
 
 const baseName = "$:/plugins/mblackman/revision-history/revisions/";
 const SNAPSHOT_INTERVAL = 10;
@@ -50,15 +52,20 @@ function extractFields(tiddler) {
 	return data;
 }
 
+// Produce a consistently-ordered JSON string from a plain fields object.
+// Sorting keys is required so two equivalent states hash identically.
+function serializeFieldsObject(fields) {
+	const sorted = {};
+	for (const key of Object.keys(fields).sort()) {
+		sorted[key] = fields[key];
+	}
+	return JSON.stringify(sorted);
+}
+
 // Serialize all tiddler fields (including text) into a consistently-ordered JSON string.
 // Used as the authoritative data for storage and restore.
 function serializeFields(tiddler) {
-	const data = extractFields(tiddler);
-	const sorted = {};
-	for (const key of Object.keys(data).sort()) {
-		sorted[key] = data[key];
-	}
-	return JSON.stringify(sorted);
+	return serializeFieldsObject(extractFields(tiddler));
 }
 
 // Fields that change automatically on every save — not considered "meaningful" changes.
@@ -334,28 +341,34 @@ export class Revisor {
 	// For "diff" revisions, walks back to the nearest snapshot and applies patches forward.
 	// For "delta" revisions, text may be absent (didn't change) — carries forward from previous.
 	reconstructText(revisionTitle) {
+		return this._reconstructTextTracked(revisionTitle).text;
+	}
+
+	// Returns { text, patchFailures, missingSnapshot, parseFailures } describing how
+	// confidently the chain could be reconstructed. reconstructText discards the status;
+	// verification paths consume it to detect broken chains.
+	_reconstructTextTracked(revisionTitle) {
 		const revision = $tw.wiki.getTiddler(revisionTitle);
-		if (!revision) return "";
+		if (!revision) return { text: "", patchFailures: 0, missingSnapshot: false, parseFailures: 0 };
 
 		const storage = revision.getFieldString("revision-storage");
 
 		if (storage !== "diff" && storage !== "delta") {
-			return this._getRevisionText(revision);
+			return { text: this._getRevisionText(revision), patchFailures: 0, missingSnapshot: false, parseFailures: 0 };
 		}
 
-		// Need to walk back to nearest snapshot and apply patches forward
 		const name = revision.getFieldString("revision-of");
 		const history = this.getHistory(name);
 		const sorted = history
 			.map(t => $tw.wiki.getTiddler(t))
 			.filter(t => t != null)
 			.sort((a, b) => (a.fields["revision-date"] || 0) - (b.fields["revision-date"] || 0));
-		// sorted is now oldest-first
 
 		const targetIdx = sorted.findIndex(t => t.fields.title === revisionTitle);
-		if (targetIdx === -1) return this._getRevisionText(revision);
+		if (targetIdx === -1) {
+			return { text: this._getRevisionText(revision), patchFailures: 0, missingSnapshot: false, parseFailures: 0 };
+		}
 
-		// Walk backward to find nearest full snapshot
 		let snapshotIdx = targetIdx;
 		while (snapshotIdx >= 0) {
 			const s = sorted[snapshotIdx].getFieldString("revision-storage");
@@ -365,10 +378,12 @@ export class Revisor {
 
 		if (snapshotIdx < 0) {
 			console.warn("No snapshot found for revision chain:", revisionTitle);
-			return this._getRevisionText(revision);
+			return { text: this._getRevisionText(revision), patchFailures: 0, missingSnapshot: true, parseFailures: 0 };
 		}
 
 		let text = this._getRevisionText(sorted[snapshotIdx]);
+		let patchFailures = 0;
+		let parseFailures = 0;
 		const dmp = getDmp();
 
 		for (let i = snapshotIdx + 1; i <= targetIdx; i++) {
@@ -376,7 +391,6 @@ export class Revisor {
 			const revStorage = rev.getFieldString("revision-storage");
 
 			if (revStorage === "delta") {
-				// Delta: text key may or may not be present in revision-data
 				const dataStr = rev.getFieldString("revision-data");
 				if (dataStr) {
 					try {
@@ -386,27 +400,33 @@ export class Revisor {
 							const [newText, results] = dmp.patch_apply(patches, text);
 							if (results.some(r => !r)) {
 								console.warn("Patch partially failed:", rev.fields.title);
+								patchFailures++;
 							}
 							text = newText;
 						}
-						// else: text didn't change in this delta, carry forward
 					} catch (e) {
 						console.warn("Failed to parse delta revision-data:", rev.fields.title);
+						parseFailures++;
 					}
 				}
 			} else {
-				// "diff" (old format): text is always a patch
 				const patchText = this._getRevisionText(rev);
-				const patches = dmp.patch_fromText(patchText);
-				const [newText, results] = dmp.patch_apply(patches, text);
-				if (results.some(r => !r)) {
-					console.warn("Patch partially failed:", rev.fields.title);
+				try {
+					const patches = dmp.patch_fromText(patchText);
+					const [newText, results] = dmp.patch_apply(patches, text);
+					if (results.some(r => !r)) {
+						console.warn("Patch partially failed:", rev.fields.title);
+						patchFailures++;
+					}
+					text = newText;
+				} catch (e) {
+					console.warn("Failed to apply diff patch:", rev.fields.title);
+					parseFailures++;
 				}
-				text = newText;
 			}
 		}
 
-		return text;
+		return { text, patchFailures, missingSnapshot: false, parseFailures };
 	}
 
 	// Extract the text value from a revision tiddler.
@@ -514,6 +534,211 @@ export class Revisor {
 		return JSON.parse(dataStr);
 	}
 
+	// Verify a single revision: reconstruct its full state, compare against stored hash.
+	// Returns { ok, storedHash, computedHash, reason }. Old-format revisions without
+	// a stored hash are considered ok ("legacy"); no data is available to cross-check.
+	verifyRevisionIntegrity(revisionTitle) {
+		const revision = $tw.wiki.getTiddler(revisionTitle);
+		if (!revision) return { ok: false, reason: "not found" };
+
+		const storedHash = revision.getFieldString("revision-full-hash");
+		if (!storedHash) return { ok: true, reason: "legacy (no stored hash)" };
+
+		try {
+			const fields = this.reconstructAllFields(revisionTitle);
+			const serialized = serializeFieldsObject(fields);
+			const computedHash = hashName(serialized);
+			return {
+				ok: computedHash === storedHash,
+				storedHash,
+				computedHash,
+				reason: computedHash === storedHash ? null : "hash mismatch",
+			};
+		} catch (e) {
+			return { ok: false, storedHash, reason: "reconstruction failed: " + e.message };
+		}
+	}
+
+	// Walk the chain for a given tiddler name and report each revision's integrity status.
+	// Returns { name, revisions: [{ title, storage, status, reason }], brokenCount, status }.
+	// A chain is "broken" if any revision in it fails verification.
+	verifyChain(name) {
+		const history = this.getHistory(name);
+		if (history.length === 0) {
+			return { name, revisions: [], status: "empty", brokenCount: 0 };
+		}
+
+		const sorted = history
+			.map(t => $tw.wiki.getTiddler(t))
+			.filter(t => t != null)
+			.sort((a, b) => (a.fields["revision-date"] || 0) - (b.fields["revision-date"] || 0));
+
+		const revisions = [];
+		let hasFullSnapshot = false;
+		let brokenCount = 0;
+
+		for (const rev of sorted) {
+			const title = rev.fields.title;
+			const storage = rev.getFieldString("revision-storage");
+			let status = "ok";
+			let reason = null;
+
+			if (storage !== "delta" && storage !== "diff") {
+				hasFullSnapshot = true;
+			}
+
+			if ((storage === "delta" || storage === "diff") && !hasFullSnapshot) {
+				status = "broken";
+				reason = "no preceding full snapshot";
+			}
+
+			if (status === "ok" && (storage === "delta" || storage === "diff")) {
+				const textResult = this._reconstructTextTracked(title);
+				if (textResult.missingSnapshot) {
+					status = "broken";
+					reason = "snapshot unreachable";
+				} else if (textResult.patchFailures > 0) {
+					status = "broken";
+					reason = textResult.patchFailures + " patch failure(s)";
+				} else if (textResult.parseFailures > 0) {
+					status = "broken";
+					reason = "delta parse failure";
+				}
+			}
+
+			if (status === "ok") {
+				const integrity = this.verifyRevisionIntegrity(title);
+				if (!integrity.ok) {
+					status = "broken";
+					reason = integrity.reason || "hash mismatch";
+				}
+			}
+
+			if (status === "broken") brokenCount++;
+			revisions.push({ title, storage: storage || "full", status, reason });
+		}
+
+		return {
+			name,
+			revisions,
+			status: brokenCount === 0 ? "ok" : "broken",
+			brokenCount,
+		};
+	}
+
+	// Scan every revision tiddler in the wiki and verify all chains found.
+	// Returns { chains: [...], summary: { totalChains, okChains, brokenChains, totalRevisions, brokenRevisions } }.
+	verifyAllChains() {
+		const names = new Set();
+		const each = $tw.wiki.each && $tw.wiki.each.bind($tw.wiki);
+		if (each) {
+			each((tiddler, title) => {
+				if (title && title.indexOf(baseName) === 0) {
+					const revOf = tiddler.getFieldString && tiddler.getFieldString("revision-of");
+					if (revOf) names.add(revOf);
+				}
+			});
+		}
+
+		const chains = [];
+		let okChains = 0;
+		let brokenChains = 0;
+		let totalRevisions = 0;
+		let brokenRevisions = 0;
+
+		for (const name of names) {
+			const result = this.verifyChain(name);
+			chains.push(result);
+			if (result.status === "ok" || result.status === "empty") okChains++;
+			else brokenChains++;
+			totalRevisions += result.revisions.length;
+			brokenRevisions += result.brokenCount;
+		}
+
+		return {
+			chains,
+			summary: {
+				totalChains: chains.length,
+				okChains,
+				brokenChains,
+				totalRevisions,
+				brokenRevisions,
+			},
+		};
+	}
+
+	// Repair a broken chain: flag every broken revision with revision-broken-chain:yes
+	// so UI can surface it, and promote the earliest still-reconstructable delta/diff
+	// revision after a break to a "full" snapshot — this gives the downstream chain a
+	// stable anchor that won't be destroyed if more revisions are lost later.
+	// Returns { name, marked, promoted, total }.
+	repairChain(name) {
+		const verification = this.verifyChain(name);
+		let marked = 0;
+		let promoted = 0;
+
+		for (const r of verification.revisions) {
+			if (r.status !== "broken") continue;
+			const rev = $tw.wiki.getTiddler(r.title);
+			if (!rev) continue;
+			if (rev.getFieldString("revision-broken-chain") === "yes") continue;
+			$tw.wiki.addTiddler(new $tw.Tiddler(rev, { "revision-broken-chain": "yes" }));
+			marked++;
+		}
+
+		const firstBrokenIdx = verification.revisions.findIndex(r => r.status === "broken");
+		if (firstBrokenIdx !== -1) {
+			for (let i = firstBrokenIdx + 1; i < verification.revisions.length; i++) {
+				const r = verification.revisions[i];
+				if (r.status !== "ok") continue;
+				if (r.storage === "full" || r.storage === "") break;
+				const rev = $tw.wiki.getTiddler(r.title);
+				if (!rev) break;
+				try {
+					const fields = this.reconstructAllFields(r.title);
+					const fullData = serializeFieldsObject(fields);
+					const newHash = hashName(fullData);
+					$tw.wiki.addTiddler(new $tw.Tiddler(rev, {
+						"revision-data": fullData,
+						"revision-storage": "full",
+						"revision-full-hash": newHash,
+					}));
+					promoted++;
+				} catch (e) {
+					console.warn("Failed to promote revision:", r.title, e.message);
+				}
+				break;
+			}
+		}
+
+		return { name, marked, promoted, total: verification.revisions.length };
+	}
+
+	// Repair every broken chain in the wiki. Returns a summary with per-chain results.
+	repairAllChains() {
+		const verification = this.verifyAllChains();
+		const results = [];
+		let totalMarked = 0;
+		let totalPromoted = 0;
+
+		for (const chain of verification.chains) {
+			if (chain.status !== "broken") continue;
+			const r = this.repairChain(chain.name);
+			results.push(r);
+			totalMarked += r.marked;
+			totalPromoted += r.promoted;
+		}
+
+		return {
+			results,
+			summary: {
+				chainsRepaired: results.length,
+				totalMarked,
+				totalPromoted,
+			},
+		};
+	}
+
 	// --- Private helpers ---
 
 	_shouldStoreSnapshot(history) {
@@ -564,7 +789,7 @@ export class Revisor {
 
 // djb2 hash of a string, returned as an 8-char lowercase hex string.
 // Used to produce a path-safe, rename-stable segment for revision tiddler titles and tags.
-function hashName(name) {
+export function hashName(name) {
 	let hash = 5381;
 	for (let i = 0; i < name.length; i++) {
 		hash = ((hash << 5) + hash + name.charCodeAt(i)) | 0;

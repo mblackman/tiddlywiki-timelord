@@ -7,7 +7,8 @@
 <$set name="isBinary" value={{{[<revisionTitle>has[type]get[type]!prefix[text/]then[yes]else[no]]}}}>
 <$set name="charCount" value={{{[<revisionTitle>reconstructtext[]length[]]}}}>
 <$set name="revNum" value={{{[<revisionTitle>get[revision-number]]}}}>
-<$list filter="[<revNum>!match[]]" variable="ignored">#<<revNum>> · </$list><$link tiddler=<<revisionTitle>>><$view tiddler=<<revisionTitle>> field="modified" format="date" template="DDth MMM YYYY at 0hh:0mm"/></$link> by ''<$view tiddler=<<revisionTitle>> field="modifier"/>'' · <<charCount>> chars
+<$set name="brokenChain" value={{{[<revisionTitle>get[revision-broken-chain]]}}}>
+<$list filter="[<revNum>!match[]]" variable="ignored">#<<revNum>> · </$list><$link tiddler=<<revisionTitle>>><$view tiddler=<<revisionTitle>> field="modified" format="date" template="DDth MMM YYYY at 0hh:0mm"/></$link> by ''<$view tiddler=<<revisionTitle>> field="modifier"/>'' · <<charCount>> chars<$list filter="[<brokenChain>match[yes]]" variable="ignored"> · <span style="color: #a43030; font-weight: bold;" title="This revision could not be reconstructed reliably — displayed content may be incorrect">⚠ broken chain</span></$list>
 <$reveal type="nomatch" state="$:/state/revision-history/restore-confirm" text=<<revisionTitle>>>
 <$button>Restore<$action-setfield $tiddler="$:/state/revision-history/restore-confirm" $value=<<revisionTitle>>/></$button>
 </$reveal>
@@ -63,22 +64,44 @@ Restore this version? <$button>Yes<$action-sendmessage $message="tm-restore-revi
 </$reveal>
 </$list>
 </$set></$set>
+<$set name="diffSizeLimit" value={{{[[$:/config/mblackman/revision-history/diff-size-limit]get[text]else[102400]]}}}>
 <$reveal type="match" state=<<diffStateCurrent>> text="open">
 <$list filter="[<isBinary>match[yes]]" variable="ignored">Binary content — cannot diff.</$list>
 <$list filter="[<isBinary>match[no]]" variable="ignored">
-<$diff-text source={{{[<revisionTitle>reconstructtext[]]}}} dest={{{[<parentTitle>reconstructtext[]]}}}/>
+<$set name="thisText" value={{{[<revisionTitle>reconstructtext[]]}}}>
+<$set name="parentText" value={{{[<parentTitle>reconstructtext[]]}}}>
+<$set name="maxLen" value={{{[<thisText>length[]] [<parentText>length[]] +[max[]]}}}>
+<$list filter="[<maxLen>compare:number:gt<diffSizeLimit>]" variable="ignored">
+''Content too large to diff'' (<<maxLen>> chars > <<diffSizeLimit>> limit) — showing raw revision text.
+<pre><<thisText>></pre>
+</$list>
+<$list filter="[<maxLen>compare:number:lteq<diffSizeLimit>]" variable="ignored">
+<$diff-text source=<<thisText>> dest=<<parentText>>/>
 
+</$list>
+</$set></$set></$set>
 </$list>
 </$reveal>
 <$reveal type="match" state=<<diffStatePrev>> text="open">
 <$list filter="[<isBinary>match[yes]]" variable="ignored">Binary content — cannot diff.</$list>
 <$list filter="[<isBinary>match[no]]" variable="ignored">
-<$diff-text source={{{[<prevRevTitle>reconstructtext[]]}}} dest={{{[<revisionTitle>reconstructtext[]]}}}/>
+<$set name="thisText" value={{{[<revisionTitle>reconstructtext[]]}}}>
+<$set name="prevText" value={{{[<prevRevTitle>reconstructtext[]]}}}>
+<$set name="maxLen" value={{{[<thisText>length[]] [<prevText>length[]] +[max[]]}}}>
+<$list filter="[<maxLen>compare:number:gt<diffSizeLimit>]" variable="ignored">
+''Content too large to diff'' (<<maxLen>> chars > <<diffSizeLimit>> limit) — showing raw revision text.
+<pre><<thisText>></pre>
+</$list>
+<$list filter="[<maxLen>compare:number:lteq<diffSizeLimit>]" variable="ignored">
+<$diff-text source=<<prevText>> dest=<<thisText>>/>
 
 </$list>
+</$set></$set></$set>
+</$list>
 </$reveal>
+</$set>
 <hr/>
-</$set></$set></$set></$set></$set></$set></$set></$set>
+</$set></$set></$set></$set></$set></$set></$set></$set></$set>
 \end
 
 <$set name="parentTitle" value=<<currentTiddler>>>

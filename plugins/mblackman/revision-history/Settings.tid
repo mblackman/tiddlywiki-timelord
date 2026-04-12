@@ -13,3 +13,34 @@ Tiddlers matching this filter will not be tracked (leave blank to track all):
 <$edit-text tiddler="$:/config/mblackman/revision-history/exclude-filter" field="text" tag="input" default="" placeholder="e.g. [tag[NoTrack]]" class="tc-edit-texteditor"/>
 
 //Example: ''[tag[NoTrack]]'' skips any tiddler tagged ~NoTrack.//
+
+---
+
+! Diff Size Limit
+
+Maximum reconstructed text length (in characters) before the diff view falls back to showing raw text. Default: 102400 (100&nbsp;KB).
+
+<$edit-text tiddler="$:/config/mblackman/revision-history/diff-size-limit" field="text" tag="input" default="102400" class="tc-edit-texteditor"/>
+
+//Guards the UI against lag on pathologically large tiddlers.//
+
+---
+
+! Chain Integrity
+
+Scan every revision chain in the wiki to detect corruption (missing snapshots, patch failures, hash drift). Run ''Verify'' first; ''Repair'' flags unreconstructable revisions with `revision-broken-chain` so the UI can surface them.
+
+<$button>
+Verify revision history
+<$action-sendmessage $message="tm-verify-revision-chains"/>
+</$button>
+<$button>
+Repair broken chains
+<$action-sendmessage $message="tm-repair-revision-chains"/>
+</$button>
+
+<$reveal type="nomatch" state="$:/temp/mblackman/revision-history/verify-report" text="">
+<div style="margin-top: 1em; padding: 0.5em 1em; background: #f4f4f4; border-left: 3px solid #888;">
+<$transclude tiddler="$:/temp/mblackman/revision-history/verify-report" mode="block"/>
+</div>
+</$reveal>

@@ -377,3 +377,83 @@ describe('tm-restore-deleted-tiddler event', () => {
     expect($tw.wiki.getTiddler('NeverExisted')).toBeNull();
   });
 });
+
+// ---------------------------------------------------------------------------
+// Verify / repair events (Phase 13)
+// ---------------------------------------------------------------------------
+
+describe('tm-verify-revision-chains event', () => {
+  it('registers an event listener', () => {
+    startup();
+    expect($tw.rootWidget._listeners['tm-verify-revision-chains']).toHaveLength(1);
+  });
+
+  it('writes a report tiddler with summary fields', () => {
+    startup();
+    const listener = $tw.rootWidget._listeners['tm-verify-revision-chains'][0];
+    listener({});
+
+    const report = $tw.wiki.getTiddler('$:/temp/mblackman/revision-history/verify-report');
+    expect(report).toBeTruthy();
+    expect(report.getFieldString('total-chains')).toBe('0');
+    expect(report.getFieldString('broken-chains')).toBe('0');
+    expect(report.getFieldString('text')).toContain('All chains verified OK');
+  });
+
+  it('lists broken chains in the report', () => {
+    startup();
+
+    // verifyAllChains discovers chains by scanning tiddler titles that start with
+    // the plugin's revisions baseName, so use a realistic title here.
+    const tag = generateTag('Bad');
+    const revTitle = '$:/plugins/mblackman/revision-history/revisions/badhash/1000-0';
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: revTitle,
+      tags: '[[' + tag + ']]',
+      'revision-of': 'Bad',
+      'revision-date': 1000,
+      'revision-storage': 'delta',
+      'revision-data': JSON.stringify({ text: 'fake patch' }),
+    }));
+
+    const listener = $tw.rootWidget._listeners['tm-verify-revision-chains'][0];
+    listener({});
+
+    const report = $tw.wiki.getTiddler('$:/temp/mblackman/revision-history/verify-report');
+    expect(report.getFieldString('broken-chains')).toBe('1');
+    expect(report.getFieldString('text')).toContain('Bad');
+    expect(report.getFieldString('text')).toContain('no preceding full snapshot');
+  });
+});
+
+describe('tm-repair-revision-chains event', () => {
+  it('registers an event listener', () => {
+    startup();
+    expect($tw.rootWidget._listeners['tm-repair-revision-chains']).toHaveLength(1);
+  });
+
+  it('marks broken revisions and writes a summary report', () => {
+    startup();
+
+    const tag = generateTag('Bad');
+    const revTitle = '$:/plugins/mblackman/revision-history/revisions/badhash/1000-0';
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: revTitle,
+      tags: '[[' + tag + ']]',
+      'revision-of': 'Bad',
+      'revision-date': 1000,
+      'revision-storage': 'delta',
+      'revision-data': JSON.stringify({ text: 'fake patch' }),
+    }));
+
+    const listener = $tw.rootWidget._listeners['tm-repair-revision-chains'][0];
+    listener({});
+
+    const rev = $tw.wiki.getTiddler(revTitle);
+    expect(rev.getFieldString('revision-broken-chain')).toBe('yes');
+
+    const report = $tw.wiki.getTiddler('$:/temp/mblackman/revision-history/verify-report');
+    expect(report.getFieldString('marked')).toBe('1');
+    expect(report.getFieldString('chains-repaired')).toBe('1');
+  });
+});

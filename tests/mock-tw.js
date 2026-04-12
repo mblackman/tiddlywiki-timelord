@@ -85,6 +85,11 @@ function createMockWiki() {
     filterTiddlers() {
       return [];
     },
+    each(callback) {
+      for (const [title, tiddler] of store) {
+        callback(tiddler, title);
+      }
+    },
   };
 }
 

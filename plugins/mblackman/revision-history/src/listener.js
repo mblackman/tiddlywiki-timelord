@@ -90,6 +90,56 @@ export function startup() {
 		}
 	});
 
+	$tw.rootWidget.addEventListener("tm-verify-revision-chains", function() {
+		const result = revisor.verifyAllChains();
+		const s = result.summary;
+		const lines = [
+			"Scanned " + s.totalChains + " chain(s), " + s.totalRevisions + " revision(s).",
+			s.brokenChains === 0
+				? "All chains verified OK."
+				: s.brokenChains + " broken chain(s); " + s.brokenRevisions + " broken revision(s).",
+		];
+		if (s.brokenChains > 0) {
+			lines.push("");
+			lines.push("! Broken chains");
+			for (const chain of result.chains) {
+				if (chain.status === "ok" || chain.status === "empty") continue;
+				lines.push("");
+				lines.push("!! " + chain.name + " (" + chain.brokenCount + "/" + chain.revisions.length + " broken)");
+				for (const r of chain.revisions) {
+					if (r.status !== "broken") continue;
+					lines.push("* " + r.title + " — " + (r.reason || "unknown"));
+				}
+			}
+		}
+		$tw.wiki.addTiddler(new $tw.Tiddler({
+			title: "$:/temp/mblackman/revision-history/verify-report",
+			text: lines.join("\n"),
+			"scan-time": String(Date.now()),
+			"broken-chains": String(s.brokenChains),
+			"total-chains": String(s.totalChains),
+			"broken-revisions": String(s.brokenRevisions),
+			"total-revisions": String(s.totalRevisions),
+		}));
+	});
+
+	$tw.rootWidget.addEventListener("tm-repair-revision-chains", function() {
+		const result = revisor.repairAllChains();
+		const s = result.summary;
+		const lines = [
+			"Repaired " + s.chainsRepaired + " chain(s).",
+			"Marked " + s.totalMarked + " broken revision(s). Promoted " + s.totalPromoted + " revision(s) to full snapshots.",
+		];
+		$tw.wiki.addTiddler(new $tw.Tiddler({
+			title: "$:/temp/mblackman/revision-history/verify-report",
+			text: lines.join("\n"),
+			"repair-time": String(Date.now()),
+			"chains-repaired": String(s.chainsRepaired),
+			"marked": String(s.totalMarked),
+			"promoted": String(s.totalPromoted),
+		}));
+	});
+
 	$tw.hooks.addHook("th-deleting-tiddler", function(tiddler) {
 		if (!tiddler) return tiddler;
 		const title = tiddler.fields.title;
