@@ -50,7 +50,8 @@ export function startup() {
 			if (excluded.indexOf(newTitle) !== -1) return newTiddler;
 		}
 
-    	if (oldTitle != newTitle) {
+    	const isRename = oldTitle != newTitle;
+    	if (isRename) {
     		revisor.renameHistory(oldTitle, newTitle);
     	}
 
@@ -58,7 +59,7 @@ export function startup() {
     	newTiddler = new $tw.Tiddler(newTiddler, { "revision-tag": generateTag(newTitle)});
 
     	// If we're overwriting an existing tiddler via rename...
-    	if (oldTitle != newTitle && $tw.wiki.tiddlerExists(newTitle)) {
+    	if (isRename && $tw.wiki.tiddlerExists(newTitle)) {
     		revisor.addToHistory(newTitle, $tw.wiki.getTiddler(newTitle));
     	}
 
@@ -67,7 +68,8 @@ export function startup() {
     		return newTiddler;
     	}
 
-    	revisor.addToHistory(newTitle, oldTiddler);
+    	const opts = isRename ? { renamedFrom: oldTitle, renamedTo: newTitle } : undefined;
+    	revisor.addToHistory(newTitle, oldTiddler, opts);
 
     	return newTiddler;
 	});

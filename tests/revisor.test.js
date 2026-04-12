@@ -1,5 +1,5 @@
 const { resetTw } = require('./mock-tw');
-const { Revisor, generateTitle, generateTag, escapeRegExp } = require('../plugins/mblackman/revision-history/src/revisor');
+const { Revisor, generateTitle, generateTag, escapeRegExp, SCHEMA_VERSION, getRevisionVersion } = require('../plugins/mblackman/revision-history/src/revisor');
 const DMP = require('diff-match-patch');
 
 beforeEach(() => {
@@ -223,6 +223,63 @@ describe('Revisor.addToHistory', () => {
     expect(rev.getFieldString('revision-full-hash')).toBeTruthy();
     expect(rev.getFieldString('revision-content-hash')).toBeTruthy();
     expect(rev.getFieldString('revision-text-hash')).toBeTruthy();
+  });
+
+  it('stamps each revision with the current schema version', () => {
+    const tiddler = new $tw.Tiddler({ title: 'T', text: 'content', modifier: 'me' });
+    revisor.addToHistory('T', tiddler);
+
+    const rev = $tw.wiki.getTiddler(revisor.getHistory('T')[0]);
+    expect(rev.getFieldString('revision-version')).toBe(SCHEMA_VERSION);
+  });
+
+  it('stores rename metadata when renamedFrom/renamedTo options are passed', () => {
+    const oldTiddler = new $tw.Tiddler({ title: 'Old', text: 'content', modifier: 'me' });
+    $tw.wiki.addTiddler(oldTiddler);
+    revisor.addToHistory('New', oldTiddler, { renamedFrom: 'Old', renamedTo: 'New' });
+
+    const rev = $tw.wiki.getTiddler(revisor.getHistory('New')[0]);
+    expect(rev.getFieldString('revision-renamed-from')).toBe('Old');
+    expect(rev.getFieldString('revision-renamed-to')).toBe('New');
+  });
+
+  it('does not set rename metadata when from and to are equal', () => {
+    const tiddler = new $tw.Tiddler({ title: 'T', text: 'content', modifier: 'me' });
+    revisor.addToHistory('T', tiddler, { renamedFrom: 'T', renamedTo: 'T' });
+
+    const rev = $tw.wiki.getTiddler(revisor.getHistory('T')[0]);
+    expect(rev.getFieldString('revision-renamed-from')).toBe('');
+    expect(rev.getFieldString('revision-renamed-to')).toBe('');
+  });
+
+  it('does not set rename metadata when no rename options are passed', () => {
+    const tiddler = new $tw.Tiddler({ title: 'T', text: 'content', modifier: 'me' });
+    revisor.addToHistory('T', tiddler);
+
+    const rev = $tw.wiki.getTiddler(revisor.getHistory('T')[0]);
+    expect(rev.getFieldString('revision-renamed-from')).toBe('');
+    expect(rev.getFieldString('revision-renamed-to')).toBe('');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Schema versioning
+// ---------------------------------------------------------------------------
+
+describe('getRevisionVersion', () => {
+  it('returns "0" for revisions without a version field (pre-versioning)', () => {
+    const rev = new $tw.Tiddler({ title: 'legacy-rev', 'revision-of': 'T' });
+    expect(getRevisionVersion(rev)).toBe('0');
+  });
+
+  it('returns the stored version field', () => {
+    const rev = new $tw.Tiddler({ title: 'rev', 'revision-version': '1' });
+    expect(getRevisionVersion(rev)).toBe('1');
+  });
+
+  it('returns "0" when given null/undefined', () => {
+    expect(getRevisionVersion(null)).toBe('0');
+    expect(getRevisionVersion(undefined)).toBe('0');
   });
 });
 
@@ -751,6 +808,9 @@ describe('Revisor.restoreFromRevision', () => {
       'revision-date': 1000,
       'revision-storage': 'full',
       'revision-data': JSON.stringify({ text: 'restored' }),
+      'revision-renamed-from': 'Older',
+      'revision-renamed-to': 'T',
+      'revision-version': '1',
     }));
 
     revisor.restoreFromRevision('rev1');
@@ -761,6 +821,9 @@ describe('Revisor.restoreFromRevision', () => {
     expect(live.fields['revision-data']).toBeUndefined();
     expect(live.fields['revision-storage']).toBeUndefined();
     expect(live.fields['revision-deleted']).toBeUndefined();
+    expect(live.fields['revision-renamed-from']).toBeUndefined();
+    expect(live.fields['revision-renamed-to']).toBeUndefined();
+    expect(live.fields['revision-version']).toBeUndefined();
   });
 
   it('does nothing for nonexistent revision', () => {

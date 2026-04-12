@@ -14,10 +14,23 @@
 //   revision-deleted:       "yes" if this captures the final state before deletion
 //   revision-changed-fields: space-separated list of meaningful fields that changed
 //   revision-number:        sequential revision number (1-based)
+//   revision-version:       schema version this revision was written with (see SCHEMA_VERSION).
+//                           Missing means pre-versioning (treat as "0"); future versions can
+//                           branch reconstruction/migration logic on this value.
+//   revision-renamed-from:  previous title, set on the revision captured at a rename event
+//   revision-renamed-to:    new title, set on the revision captured at a rename event
 
 const baseName = "$:/plugins/mblackman/revision-history/revisions/";
 const SNAPSHOT_INTERVAL = 10;
-const SCHEMA_VERSION = "1";
+// Bump when the on-disk revision schema changes in a non-backward-compatible way.
+// Readers should treat missing revision-version as "0" (pre-versioning).
+export const SCHEMA_VERSION = "1";
+
+// Read the schema version of a revision tiddler. Returns "0" for pre-versioning revisions.
+export function getRevisionVersion(revision) {
+	if (!revision) return "0";
+	return revision.getFieldString("revision-version") || "0";
+}
 
 let _dmp = null;
 function getDmp() {
@@ -71,7 +84,9 @@ function serializeContentFields(tiddler) {
 export class Revisor {
 	constructor() {}
 
-	addToHistory(name, tiddler) {
+	addToHistory(name, tiddler, options) {
+		const renamedFrom = options && options.renamedFrom;
+		const renamedTo = options && options.renamedTo;
 		const candidateFields = extractFields(tiddler);
 		const candidateData = serializeFields(tiddler);
 		const candidateText = candidateFields.text || "";
@@ -113,7 +128,8 @@ export class Revisor {
 		// Get previous revision's full field state for delta computation
 		const prevFields = history.length > 0 ? this._getPreviousRevisionFields(history) : null;
 
-		// Compute which meaningful fields changed (for display metadata)
+		// Compute which meaningful fields changed (for display metadata).
+		// Renames are surfaced via revision-renamed-from/to below — no synthetic "title" entry.
 		const changedFieldNames = this._getChangedFieldNames(candidateFields, prevFields);
 
 		let storedData, storageMode;
@@ -156,7 +172,7 @@ export class Revisor {
 			}
 		}
 
-		const entry = new $tw.Tiddler({
+		const entryFields = {
 			title: generateTitle({ name, timestampMs: Date.now() }),
 			type: tiddler.getFieldString("type") || "text/vnd.tiddlywiki",
 			modified: capturedAt,
@@ -172,7 +188,12 @@ export class Revisor {
 			"revision-number": revisionNumber,
 			"revision-version": SCHEMA_VERSION,
 			tags: "[[" + generateTag(name) + "]]",
-		});
+		};
+		if (renamedFrom && renamedTo && renamedFrom !== renamedTo) {
+			entryFields["revision-renamed-from"] = renamedFrom;
+			entryFields["revision-renamed-to"] = renamedTo;
+		}
+		const entry = new $tw.Tiddler(entryFields);
 
 		$tw.wiki.addTiddler(entry);
 		console.log("Added tiddler to history:", name, "(" + storageMode + ", rev #" + revisionNumber + ")");
@@ -277,6 +298,8 @@ export class Revisor {
 		delete restoredFields["revision-changed-fields"];
 		delete restoredFields["revision-number"];
 		delete restoredFields["revision-version"];
+		delete restoredFields["revision-renamed-from"];
+		delete restoredFields["revision-renamed-to"];
 
 		const wasEnabled = $tw.wiki.getTiddlerText("$:/config/mblackman/revision-history/enabled", "yes");
 		if (wasEnabled === "yes") {

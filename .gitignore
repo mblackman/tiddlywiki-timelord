@@ -1,5 +1,5 @@
 # Babel build files
-plugins/revision-history/lib/
+plugins/mblackman/revision-history/lib/
 
 # Output build dir
 build/

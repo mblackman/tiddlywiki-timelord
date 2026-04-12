@@ -28,6 +28,11 @@ Restore this version? <$button>Yes<$action-sendmessage $message="tm-restore-revi
 <$button set=<<diffStatePrev>> setTo="">Close diff</$button>
 </$reveal>
 </$list>
+<$set name="renamedFrom" value={{{[<revisionTitle>get[revision-renamed-from]]}}}>
+<$set name="renamedTo" value={{{[<revisionTitle>get[revision-renamed-to]]}}}>
+<$list filter="[<renamedFrom>!match[]]" variable="ignored">
+<div>renamed: ''<<renamedFrom>>'' → ''<<renamedTo>>''</div>
+</$list>
 <$list filter="[<revisionTitle>revisionchangedfields[]!match[text]first[]]" variable="firstChangedField">
 <$reveal type="nomatch" state=<<fieldChangesState>> text="open">
 <$button set=<<fieldChangesState>> setTo="open" class="tc-btn-invisible tc-tiddlylink">Fields: <$list filter="[<revisionTitle>revisionchangedfields[]!match[text]]" variable="fieldName" counter="cnt">''<<fieldName>>''<$list filter="[<cnt-last>match[no]]" variable="ignored">, </$list></$list></$button>
@@ -37,13 +42,27 @@ Restore this version? <$button>Yes<$action-sendmessage $message="tm-restore-revi
 <div style="margin-left: 1em; font-size: 0.9em; color: #666;">
 <$list filter="[<revisionTitle>revisionchangedfields[]!match[text]]" variable="fieldName">
 <div>
-  <strong><<fieldName>>:</strong> 
-  <$diff-text source={{{[<prevRevTitle>reconstructfield<fieldName>]}}} dest={{{[<revisionTitle>reconstructfield<fieldName>]}}}/>
+  <strong><<fieldName>>:</strong>
+  <$list filter="[<fieldName>match[tags]]" variable="ignored">
+    <$set name="newTags" value={{{[<revisionTitle>reconstructfield[tags]]}}}>
+    <$set name="oldTags" value={{{[<prevRevTitle>reconstructfield[tags]]}}}>
+    <$list filter="[enlist<newTags>] -[enlist<oldTags>]" variable="t"><span style="color: #2a7a2a;">+<<t>></span> </$list><$list filter="[enlist<oldTags>] -[enlist<newTags>]" variable="t"><span style="color: #a43030;">-<<t>></span> </$list>
+    </$set></$set>
+  </$list>
+  <$list filter="[<fieldName>!match[tags]]" variable="ignored">
+    <$set name="newVal" value={{{[<revisionTitle>reconstructfield<fieldName>]}}}>
+    <$set name="oldVal" value={{{[<prevRevTitle>reconstructfield<fieldName>]}}}>
+    <$set name="maxLen" value={{{[<newVal>length[]] [<oldVal>length[]] +[max[]]}}}>
+    <$list filter="[<maxLen>compare:number:lt[80]]" variable="ignored"><del><<oldVal>></del> → <ins><<newVal>></ins></$list>
+    <$list filter="[<maxLen>compare:number:gteq[80]]" variable="ignored"><$diff-text source=<<oldVal>> dest=<<newVal>>/></$list>
+    </$set></$set></$set>
+  </$list>
 </div>
 </$list>
 </div>
 </$reveal>
 </$list>
+</$set></$set>
 <$reveal type="match" state=<<diffStateCurrent>> text="open">
 <$list filter="[<isBinary>match[yes]]" variable="ignored">Binary content — cannot diff.</$list>
 <$list filter="[<isBinary>match[no]]" variable="ignored">

@@ -161,6 +161,43 @@ describe('th-saving-tiddler hook', () => {
     expect(existingRev.getFieldString('revision-of')).toBe('NewName');
   });
 
+  it('stamps the new revision with rename metadata when a rename occurs', () => {
+    const oldTiddler = new $tw.Tiddler({ title: 'OldName', text: 'content', modifier: 'me' });
+    $tw.wiki.addTiddler(oldTiddler);
+
+    const newTiddler = new $tw.Tiddler({ title: 'NewName', text: 'content changed', modifier: 'me' });
+    const draft = new $tw.Tiddler({ title: 'Draft', 'draft.of': 'OldName' });
+
+    savingHook(newTiddler, draft);
+
+    const newTag = generateTag('NewName');
+    const revisions = $tw.wiki.getTiddlersWithTag(newTag);
+    // One of the new revisions should carry the rename markers
+    const renameRev = revisions
+      .map(t => $tw.wiki.getTiddler(t))
+      .find(r => r.getFieldString('revision-renamed-from') === 'OldName');
+    expect(renameRev).toBeTruthy();
+    expect(renameRev.getFieldString('revision-renamed-to')).toBe('NewName');
+  });
+
+  it('does not stamp rename metadata when title is unchanged', () => {
+    const oldTiddler = new $tw.Tiddler({ title: 'Doc', text: 'old', modifier: 'me' });
+    $tw.wiki.addTiddler(oldTiddler);
+
+    const newTiddler = new $tw.Tiddler({ title: 'Doc', text: 'new', modifier: 'me' });
+    const draft = new $tw.Tiddler({ title: 'Draft', 'draft.of': 'Doc' });
+
+    savingHook(newTiddler, draft);
+
+    const tag = generateTag('Doc');
+    const revisions = $tw.wiki.getTiddlersWithTag(tag);
+    expect(revisions.length).toBeGreaterThanOrEqual(1);
+    for (const t of revisions) {
+      const rev = $tw.wiki.getTiddler(t);
+      expect(rev.getFieldString('revision-renamed-from')).toBe('');
+    }
+  });
+
   it('respects the global enabled toggle', () => {
     // Disable tracking
     $tw.wiki.addTiddler(new $tw.Tiddler({
