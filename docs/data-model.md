@@ -42,6 +42,7 @@ Each revision tiddler carries the following fields. The source of truth is the c
 | `revision-version` | `SCHEMA_VERSION` at time of capture | See [schema-versioning.md](schema-versioning.md). Missing means pre-versioning (treat as `"0"`). |
 | `revision-renamed-from` | previous title | Only set on the revision captured at a rename event. Frozen — unaffected by later renames. |
 | `revision-renamed-to` | new title | Paired with `revision-renamed-from`. |
+| `revision-broken-chain` | `"yes"` or absent | Stamped by `repairChain` when chain-integrity verification flags this revision as unreconstructable. The Revisions tab shows a `⚠ broken chain` badge. See [chain-integrity.md](chain-integrity.md). |
 | `tags` | `[[<tag>]]` | The tag computed by `generateTag(name)`. |
 | `title`, `type`, `modified`, `modifier` | standard TW fields | `modified` = capture time, **not** the original tiddler's modified time (that is preserved inside `revision-data`). |
 

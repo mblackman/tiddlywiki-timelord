@@ -13,6 +13,7 @@ If you are a new user, see the top-level [README.md](../README.md) for install a
 - [integration.md](integration.md) — TiddlyWiki hooks, widget messages, filter operators, and UI tiddlers the plugin registers.
 - [development.md](development.md) — build, test, and debug workflows; how to extend the plugin.
 - [schema-versioning.md](schema-versioning.md) — what `SCHEMA_VERSION` means and how to evolve the on-disk format.
+- [chain-integrity.md](chain-integrity.md) — verify/repair APIs, failure modes, and expected behavior under partial imports.
 
 ## Quick map of the source tree
 

@@ -55,6 +55,18 @@ Handler: looks up the latest `revision-deleted` revision with `revisor.getLatest
 
 Used by the Restore button in the Deleted Tiddlers sidebar.
 
+### `tm-verify-revision-chains`
+
+No payload. Scans every revision chain in the wiki via `revisor.verifyAllChains()` and writes a human-readable report to `$:/temp/mblackman/revision-history/verify-report`. The report tiddler also carries numeric summary fields (`total-chains`, `broken-chains`, `total-revisions`, `broken-revisions`) so downstream UI can render badges without parsing the text.
+
+Used by the "Verify revision history" button in the Settings tab.
+
+### `tm-repair-revision-chains`
+
+No payload. Runs `revisor.repairAllChains()`, which flags every broken revision with `revision-broken-chain: yes` and tries to promote the earliest still-reconstructable delta after a break into a full snapshot. Writes a summary to the same `verify-report` tiddler.
+
+Used by the "Repair broken chains" button in the Settings tab.
+
 ## Filter operators
 
 Defined in `src/filters.js`. Each is registered under its export name via TiddlyWiki's filter operator convention.
@@ -99,8 +111,9 @@ Used by the field-changes UI to render `old → new` inline comparisons and the 
 |-------|---------|---------|
 | `$:/config/mblackman/revision-history/enabled` | `"yes"` | Master on/off. Checked on every save and delete. Also temporarily flipped by `restoreFromRevision` so the restore doesn't create a spurious revision. |
 | `$:/config/mblackman/revision-history/exclude-filter` | `""` | Any filter expression. Tiddlers matching are skipped on save and delete. |
+| `$:/config/mblackman/revision-history/diff-size-limit` | `"102400"` | Maximum reconstructed text length (characters) before the diff view in `Revisions.tid` falls back to raw text. Prevents UI lag on pathologically large tiddlers. |
 
-Both are wired to visible controls in `ControlPanel.tid` (a `$:/tags/ControlPanel` tab).
+All three are wired to visible controls in `Settings.tid` (a `$:/tags/ControlPanel/SettingsTab` tab).
 
 ## UI tiddlers shipped with the plugin
 
