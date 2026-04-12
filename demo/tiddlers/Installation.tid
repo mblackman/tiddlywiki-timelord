@@ -8,7 +8,7 @@ To install the ''Revision History'' plugin into your own TiddlyWiki:
 # Drag the link below and drop it onto your TiddlyWiki page:
 
 <div style="margin: 1em 2em; padding: 1em; background: <<colour tiddler-background>>; border: 1px solid <<colour tiddler-editor-border>>; border-radius: 4px; text-align: center;">
-<a href="https://github.com/mblackman/tiddlywiki-revision-history/releases/latest/download/revision-history.tid" style="font-size: 1.2em; font-weight: bold;">⬇ revision-history.tid</a>
+<$link to="$:/plugins/mblackman/revision-history" style="font-size: 1.2em; font-weight: bold;">⬇ revision-history</$link>
 </div>
 
 # TiddlyWiki will ask you to confirm the import — click ''Import''.
@@ -20,5 +20,5 @@ To install the ''Revision History'' plugin into your own TiddlyWiki:
 
 !! Notes
 
-* The link above always points to the latest release.
-* You can also find all releases on the [[GitHub releases page|https://github.com/mblackman/tiddlywiki-revision-history/releases]].
+* The link above points to the installed version of the plugin on this demo site.
+* You can also download the single-file plugin directly from the [[GitHub releases page|https://github.com/mblackman/tiddlywiki-revision-history/releases]].
