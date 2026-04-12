@@ -1,0 +1,92 @@
+\define stats-tiddler() $:/temp/mblackman/revision-history/stats
+\define top-prefix() $:/temp/mblackman/revision-history/stats/top/
+\define prune-filter-tiddler() $:/config/mblackman/revision-history/prune-filter
+\define prune-report() $:/temp/mblackman/revision-history/prune-report
+
+! Storage Overview
+
+<$button>
+Refresh stats
+<$action-sendmessage $message="tm-compute-revision-stats"/>
+</$button>
+
+<$reveal type="match" stateTitle=<<stats-tiddler>> stateField="total-revisions" text="">
+//Click ''Refresh stats'' to compute revision totals.//
+</$reveal>
+
+<$reveal type="nomatch" stateTitle=<<stats-tiddler>> stateField="total-revisions" text="">
+<$set name="totalRevs" value={{{[<stats-tiddler>get[total-revisions]]}}}>
+<$set name="totalBytes" value={{{[<stats-tiddler>get[total-bytes]]}}}>
+<$set name="chains" value={{{[<stats-tiddler>get[chains-count]]}}}>
+<$set name="broken" value={{{[<stats-tiddler>get[broken-revisions]]}}}>
+<$set name="totalKB" value={{{[<totalBytes>divide[1024]fixed[1]]}}}>
+
+|!Metric |!Value |
+|Total revision tiddlers |<<totalRevs>> |
+|Chains (tiddlers with history) |<<chains>> |
+|Approximate storage |<<totalBytes>> chars (~<<totalKB>> KB) |
+|Broken revisions |<<broken>> |
+
+<$list filter="[<broken>compare:number:gt[0]]" variable="ignored">
+//Broken revisions were detected. Use the ''Verify'' / ''Repair'' actions in the Revision History Settings tab.//
+</$list>
+
+!! Top tiddlers by revision count
+
+<$list filter="[prefix<top-prefix>sort[rank]]" variable="entry" emptyMessage="//No chains recorded yet.//">
+* <$link to={{{ [<entry>get[tiddler-name]] }}}>{{{ [<entry>get[tiddler-name]] }}}</$link> — {{{ [<entry>get[revision-count]] }}} revisions, {{{ [<entry>get[revision-bytes]] }}} chars
+</$list>
+</$set></$set></$set></$set></$set>
+</$reveal>
+
+---
+
+! Prune History By Filter
+
+Remove revision history for every tiddler matching a filter. The ''live'' tiddlers are not affected — only their revisions. This is irreversible.
+
+Filter:
+
+<$edit-text tiddler=<<prune-filter-tiddler>> field="text" tag="input" default="" placeholder="e.g. [tag[Archive]] or [prefix[Temp/]]" class="tc-edit-texteditor"/>
+
+<$set name="pruneFilter" value={{{[<prune-filter-tiddler>get[text]]}}}>
+<$list filter="[<pruneFilter>!match[]]" variable="ignored">
+<$set name="matchCount" value={{{[subfilter<pruneFilter>count[]]}}}>
+
+''<<matchCount>>'' tiddler(s) match this filter (not all will have revision history).
+
+<details>
+<summary>Show matching tiddler names</summary>
+<$list filter="[subfilter<pruneFilter>]" variable="t">
+* <<t>>
+</$list>
+</details>
+
+<$reveal type="nomatch" state="$:/state/revision-history/prune-confirm" text="yes">
+<$button>
+Delete history matching filter
+<$action-setfield $tiddler="$:/state/revision-history/prune-confirm" $value="yes"/>
+</$button>
+</$reveal>
+<$reveal type="match" state="$:/state/revision-history/prune-confirm" text="yes">
+Really delete revision history for every matching tiddler?
+<$button>
+Yes, prune
+<$action-sendmessage $message="tm-delete-history-matching" filter=<<pruneFilter>>/>
+<$action-setfield $tiddler="$:/state/revision-history/prune-confirm" $value=""/>
+<$action-sendmessage $message="tm-compute-revision-stats"/>
+</$button>
+<$button>
+Cancel
+<$action-setfield $tiddler="$:/state/revision-history/prune-confirm" $value=""/>
+</$button>
+</$reveal>
+</$set>
+</$list>
+</$set>
+
+<$reveal type="nomatch" stateTitle=<<prune-report>> stateField="text" text="">
+<div style="margin-top: 1em; padding: 0.5em 1em; background: #f4f4f4; border-left: 3px solid #888;">
+<$transclude tiddler=<<prune-report>> mode="block"/>
+</div>
+</$reveal>

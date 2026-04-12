@@ -66,6 +66,24 @@
 				"caption": "Revision History Settings",
 				"tags": "$:/tags/ControlPanel/SettingsTab"
 			}
+		},
+		{
+			"file": "Stats.tid",
+			"fields": {
+				"type": "text/vnd.tiddlywiki",
+				"title": "$:/plugins/mblackman/revision-history/Stats",
+				"caption": "Revision History Stats",
+				"tags": "$:/tags/ControlPanel/SettingsTab"
+			}
+		},
+		{
+			"file": "Help.tid",
+			"fields": {
+				"type": "text/vnd.tiddlywiki",
+				"title": "$:/plugins/mblackman/revision-history/Help",
+				"caption": "Revision History Help",
+				"tags": "$:/tags/ControlPanel/SettingsTab"
+			}
 		}
 	]
 }

@@ -1497,3 +1497,134 @@ describe('Revisor.repairAllChains', () => {
     jest.useRealTimers();
   });
 });
+
+// ---------------------------------------------------------------------------
+// Phase 15 — getStats
+// ---------------------------------------------------------------------------
+
+describe('Revisor.getStats', () => {
+  let revisor;
+
+  beforeEach(() => {
+    revisor = new Revisor();
+  });
+
+  it('returns zeros for an empty wiki', () => {
+    const s = revisor.getStats();
+    expect(s.totalRevisions).toBe(0);
+    expect(s.totalBytes).toBe(0);
+    expect(s.chainsCount).toBe(0);
+    expect(s.brokenRevisions).toBe(0);
+    expect(s.topByCount).toEqual([]);
+  });
+
+  it('aggregates totals across chains', () => {
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date('2026-01-01T00:00:00Z'));
+
+    for (let i = 0; i < 3; i++) {
+      const t = new $tw.Tiddler({ title: 'A', text: 'hello ' + i });
+      revisor.addToHistory('A', t);
+      jest.advanceTimersByTime(1000);
+    }
+    for (let i = 0; i < 5; i++) {
+      const t = new $tw.Tiddler({ title: 'B', text: 'world ' + i });
+      revisor.addToHistory('B', t);
+      jest.advanceTimersByTime(1000);
+    }
+
+    const s = revisor.getStats();
+    expect(s.totalRevisions).toBe(8);
+    expect(s.chainsCount).toBe(2);
+    expect(s.totalBytes).toBeGreaterThan(0);
+    expect(s.topByCount[0].name).toBe('B');
+    expect(s.topByCount[0].count).toBe(5);
+    expect(s.topByCount[1].name).toBe('A');
+    expect(s.topByCount[1].count).toBe(3);
+
+    jest.useRealTimers();
+  });
+
+  it('honors the limit argument for topByCount', () => {
+    for (const name of ['A', 'B', 'C']) {
+      const t = new $tw.Tiddler({ title: name, text: name });
+      revisor.addToHistory(name, t);
+    }
+    const s = revisor.getStats(2);
+    expect(s.topByCount).toHaveLength(2);
+    expect(s.chainsCount).toBe(3);
+  });
+
+  it('counts revisions flagged revision-broken-chain', () => {
+    const t = new $tw.Tiddler({ title: 'A', text: 'hello' });
+    revisor.addToHistory('A', t);
+    const [title] = revisor.getHistory('A');
+    $tw.wiki.addTiddler(new $tw.Tiddler($tw.wiki.getTiddler(title), { 'revision-broken-chain': 'yes' }));
+
+    const s = revisor.getStats();
+    expect(s.brokenRevisions).toBe(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Phase 15 — removeHistoryMatchingFilter
+// ---------------------------------------------------------------------------
+
+describe('Revisor.removeHistoryMatchingFilter', () => {
+  let revisor;
+
+  beforeEach(() => {
+    revisor = new Revisor();
+  });
+
+  it('is a no-op for empty filter', () => {
+    const t = new $tw.Tiddler({ title: 'A', text: 'hello' });
+    revisor.addToHistory('A', t);
+    const before = revisor.getHistory('A').length;
+
+    expect(revisor.removeHistoryMatchingFilter('').deletedChains).toBe(0);
+    expect(revisor.removeHistoryMatchingFilter('   ').deletedChains).toBe(0);
+    expect(revisor.removeHistoryMatchingFilter(null).deletedChains).toBe(0);
+
+    expect(revisor.getHistory('A')).toHaveLength(before);
+  });
+
+  it('deletes history only for tiddlers the filter matches AND that have history', () => {
+    for (const name of ['A', 'B', 'C']) {
+      revisor.addToHistory(name, new $tw.Tiddler({ title: name, text: name }));
+    }
+
+    // Mock filterTiddlers to match A and a non-existent D (which should be ignored)
+    $tw.wiki.filterTiddlers = (filter) => filter === 'A-or-D' ? ['A', 'D'] : [];
+
+    const result = revisor.removeHistoryMatchingFilter('A-or-D');
+    expect(result.deletedChains).toBe(1);
+    expect(result.deletedRevisions).toBe(1);
+    expect(result.names).toEqual(['A']);
+
+    expect(revisor.getHistory('A')).toHaveLength(0);
+    expect(revisor.getHistory('B')).toHaveLength(1);
+    expect(revisor.getHistory('C')).toHaveLength(1);
+  });
+
+  it('deletes every revision across matched chains', () => {
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date('2026-01-01T00:00:00Z'));
+
+    for (let i = 0; i < 3; i++) {
+      revisor.addToHistory('A', new $tw.Tiddler({ title: 'A', text: 'a ' + i }));
+      jest.advanceTimersByTime(1000);
+    }
+    revisor.addToHistory('B', new $tw.Tiddler({ title: 'B', text: 'b' }));
+
+    $tw.wiki.filterTiddlers = () => ['A', 'B'];
+
+    const result = revisor.removeHistoryMatchingFilter('*');
+    expect(result.deletedChains).toBe(2);
+    expect(result.deletedRevisions).toBe(4);
+    expect(revisor.getHistory('A')).toHaveLength(0);
+    expect(revisor.getHistory('B')).toHaveLength(0);
+
+    jest.useRealTimers();
+  });
+});

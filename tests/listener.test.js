@@ -426,6 +426,144 @@ describe('tm-verify-revision-chains event', () => {
   });
 });
 
+// ---------------------------------------------------------------------------
+// Phase 15 — stats / prune events
+// ---------------------------------------------------------------------------
+
+describe('tm-compute-revision-stats event', () => {
+  it('registers an event listener', () => {
+    startup();
+    expect($tw.rootWidget._listeners['tm-compute-revision-stats']).toHaveLength(1);
+  });
+
+  it('writes a stats tiddler with aggregate fields and top-N per-entry tiddlers', () => {
+    startup();
+
+    const tag = generateTag('A');
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: '$:/plugins/mblackman/revision-history/revisions/aaa/1000-0',
+      tags: '[[' + tag + ']]',
+      'revision-of': 'A',
+      'revision-date': 1000,
+      'revision-storage': 'full',
+      'revision-data': JSON.stringify({ text: 'hello' }),
+    }));
+
+    const listener = $tw.rootWidget._listeners['tm-compute-revision-stats'][0];
+    listener({});
+
+    const report = $tw.wiki.getTiddler('$:/temp/mblackman/revision-history/stats');
+    expect(report).toBeTruthy();
+    expect(report.getFieldString('total-revisions')).toBe('1');
+    expect(report.getFieldString('chains-count')).toBe('1');
+
+    const top = $tw.wiki.getTiddler('$:/temp/mblackman/revision-history/stats/top/01');
+    expect(top).toBeTruthy();
+    expect(top.getFieldString('tiddler-name')).toBe('A');
+    expect(top.getFieldString('revision-count')).toBe('1');
+  });
+
+  it('clears stale top-N tiddlers on recompute', () => {
+    startup();
+
+    // Seed a stale top entry that isn't in the current wiki state
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: '$:/temp/mblackman/revision-history/stats/top/99',
+      text: 'GhostTiddler',
+    }));
+
+    const listener = $tw.rootWidget._listeners['tm-compute-revision-stats'][0];
+    listener({});
+
+    expect($tw.wiki.getTiddler('$:/temp/mblackman/revision-history/stats/top/99')).toBeNull();
+  });
+});
+
+describe('tm-delete-revision-history event', () => {
+  it('registers an event listener', () => {
+    startup();
+    expect($tw.rootWidget._listeners['tm-delete-revision-history']).toHaveLength(1);
+  });
+
+  it('removes every revision for the named tiddler', () => {
+    startup();
+
+    const tag = generateTag('A');
+    for (let i = 0; i < 3; i++) {
+      $tw.wiki.addTiddler(new $tw.Tiddler({
+        title: '$:/plugins/mblackman/revision-history/revisions/aaa/' + (1000 + i) + '-0',
+        tags: '[[' + tag + ']]',
+        'revision-of': 'A',
+        'revision-date': 1000 + i,
+      }));
+    }
+
+    const listener = $tw.rootWidget._listeners['tm-delete-revision-history'][0];
+    listener({ paramObject: { tiddlerName: 'A' } });
+
+    expect($tw.wiki.getTiddlersWithTag(tag)).toEqual([]);
+  });
+
+  it('is a no-op when tiddlerName is missing', () => {
+    startup();
+    const listener = $tw.rootWidget._listeners['tm-delete-revision-history'][0];
+    // Should not throw
+    listener({});
+    listener({ paramObject: {} });
+  });
+});
+
+describe('tm-delete-history-matching event', () => {
+  it('registers an event listener', () => {
+    startup();
+    expect($tw.rootWidget._listeners['tm-delete-history-matching']).toHaveLength(1);
+  });
+
+  it('prunes chains matched by the filter and writes a report', () => {
+    startup();
+
+    const tagA = generateTag('A');
+    const tagB = generateTag('B');
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: '$:/plugins/mblackman/revision-history/revisions/aaa/1000-0',
+      tags: '[[' + tagA + ']]',
+      'revision-of': 'A',
+      'revision-date': 1000,
+    }));
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: '$:/plugins/mblackman/revision-history/revisions/bbb/2000-0',
+      tags: '[[' + tagB + ']]',
+      'revision-of': 'B',
+      'revision-date': 2000,
+    }));
+
+    $tw.wiki.filterTiddlers = () => ['A'];
+
+    const listener = $tw.rootWidget._listeners['tm-delete-history-matching'][0];
+    listener({ paramObject: { filter: '[tag[foo]]' } });
+
+    expect($tw.wiki.getTiddlersWithTag(tagA)).toEqual([]);
+    expect($tw.wiki.getTiddlersWithTag(tagB)).toHaveLength(1);
+
+    const report = $tw.wiki.getTiddler('$:/temp/mblackman/revision-history/prune-report');
+    expect(report).toBeTruthy();
+    expect(report.getFieldString('deleted-chains')).toBe('1');
+    expect(report.getFieldString('deleted-revisions')).toBe('1');
+    expect(report.getFieldString('deleted-names')).toBe('A');
+  });
+
+  it('is a no-op when filter is missing or empty', () => {
+    startup();
+    const listener = $tw.rootWidget._listeners['tm-delete-history-matching'][0];
+
+    listener({});
+    listener({ paramObject: { filter: '' } });
+    listener({ paramObject: { filter: '   ' } });
+
+    expect($tw.wiki.getTiddler('$:/temp/mblackman/revision-history/prune-report')).toBeNull();
+  });
+});
+
 describe('tm-repair-revision-chains event', () => {
   it('registers an event listener', () => {
     startup();

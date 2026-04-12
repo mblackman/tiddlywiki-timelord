@@ -37,6 +37,13 @@ First public release of the mblackman fork. User-facing changes since the upstre
 * ''Verify revision history'' button walks every chain and reports broken or drifted revisions.
 * ''Repair broken chains'' button flags broken revisions and promotes the earliest recoverable delta into a snapshot so downstream history is usable again.
 
+!! End-user surface
+
+* New ''Revision History Help'' tab in the Control Panel explains what the plugin does, how to read the Revisions tab, how to pause capture, and how to prune history — aimed at users who haven't read the developer docs.
+* New ''Revision History Stats'' tab shows total revision count, approximate storage, top tiddlers by revision count, and broken-revision totals.
+* ''Delete all history'' button in the Revisions tab removes every revision for the current tiddler (with confirmation). The live tiddler is untouched.
+* ''Delete history matching filter'' admin action in the Stats tab prunes history across many tiddlers at once. Blast radius is larger so confirmation is a separate step.
+
 !! Compatibility
 
 * Requires TiddlyWiki 5.3.0 or newer.

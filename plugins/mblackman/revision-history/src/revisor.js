@@ -714,6 +714,85 @@ export class Revisor {
 		return { name, marked, promoted, total: verification.revisions.length };
 	}
 
+	// Aggregate statistics about revision storage across the wiki.
+	// Returns { totalRevisions, totalBytes, chainsCount, brokenRevisions, topByCount }.
+	// `totalBytes` is the sum of revision-data string length across every revision tiddler
+	// (approximate — metadata fields aren't counted, but revision-data dominates).
+	// `topByCount` is up to 10 entries of { name, count, bytes } sorted by count descending.
+	getStats(limit) {
+		const top = limit || 10;
+		const perChain = new Map();
+		let totalRevisions = 0;
+		let totalBytes = 0;
+		let brokenRevisions = 0;
+
+		const each = $tw.wiki.each && $tw.wiki.each.bind($tw.wiki);
+		if (each) {
+			each((tiddler, title) => {
+				if (!title || title.indexOf(baseName) !== 0) return;
+				if (!tiddler || !tiddler.getFieldString) return;
+				const revOf = tiddler.getFieldString("revision-of");
+				if (!revOf) return;
+
+				totalRevisions++;
+				const dataLen = (tiddler.getFieldString("revision-data") || "").length;
+				totalBytes += dataLen;
+				if (tiddler.getFieldString("revision-broken-chain") === "yes") brokenRevisions++;
+
+				const entry = perChain.get(revOf) || { count: 0, bytes: 0 };
+				entry.count++;
+				entry.bytes += dataLen;
+				perChain.set(revOf, entry);
+			});
+		}
+
+		const topByCount = Array.from(perChain.entries())
+			.map(([name, v]) => ({ name, count: v.count, bytes: v.bytes }))
+			.sort((a, b) => b.count - a.count || b.bytes - a.bytes)
+			.slice(0, top);
+
+		return {
+			totalRevisions,
+			totalBytes,
+			chainsCount: perChain.size,
+			brokenRevisions,
+			topByCount,
+		};
+	}
+
+	// Remove revision history for every tiddler name that the filter matches AND has a chain.
+	// Returns { deletedChains, deletedRevisions, names } where `names` is the list of
+	// tiddler names whose history was removed. An empty or whitespace-only filter is a no-op.
+	removeHistoryMatchingFilter(filter) {
+		if (!filter || !filter.trim()) {
+			return { deletedChains: 0, deletedRevisions: 0, names: [] };
+		}
+
+		const chainNames = new Set();
+		const each = $tw.wiki.each && $tw.wiki.each.bind($tw.wiki);
+		if (each) {
+			each((tiddler, title) => {
+				if (!title || title.indexOf(baseName) !== 0) return;
+				const revOf = tiddler.getFieldString && tiddler.getFieldString("revision-of");
+				if (revOf) chainNames.add(revOf);
+			});
+		}
+
+		const matched = $tw.wiki.filterTiddlers ? $tw.wiki.filterTiddlers(filter) : [];
+		const removed = [];
+		let deletedRevisions = 0;
+		for (const name of matched) {
+			if (!chainNames.has(name)) continue;
+			const history = this.getHistory(name);
+			if (history.length === 0) continue;
+			deletedRevisions += history.length;
+			for (const t of history) $tw.wiki.deleteTiddler(t);
+			removed.push(name);
+		}
+
+		return { deletedChains: removed.length, deletedRevisions, names: removed };
+	}
+
 	// Repair every broken chain in the wiki. Returns a summary with per-chain results.
 	repairAllChains() {
 		const verification = this.verifyAllChains();

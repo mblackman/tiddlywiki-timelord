@@ -108,9 +108,31 @@ Restore this version? <$button>Yes<$action-sendmessage $message="tm-restore-revi
 <$set name="revisionTag" value={{!!revision-tag}}>
 <$set name="showAllState" value={{{[[$:/state/revision-history/show-all/]addsuffix<parentTitle>]}}}>
 <$set name="sortStateKey" value={{{[[$:/state/revision-history/sort/]addsuffix<parentTitle>]}}}>
+<$set name="deleteAllState" value={{{[[$:/state/revision-history/delete-all/]addsuffix<parentTitle>]}}}>
 <$set name="totalCount" value={{{[tag<revisionTag>count[]]}}}>
 
 Sort: <$reveal type="nomatch" state=<<sortStateKey>> text="asc">Newest first | <$button set=<<sortStateKey>> setTo="asc">Oldest first</$button></$reveal><$reveal type="match" state=<<sortStateKey>> text="asc"><$button set=<<sortStateKey>> setTo="">Newest first</$button> | Oldest first</$reveal>
+
+<$list filter="[<totalCount>compare:number:gt[0]]" variable="ignored">
+<$reveal type="nomatch" state=<<deleteAllState>> text="yes">
+<$button class="tc-btn-invisible tc-tiddlylink" style="color: #a43030;">
+Delete all history (<<totalCount>>)
+<$action-setfield $tiddler=<<deleteAllState>> $value="yes"/>
+</$button>
+</$reveal>
+<$reveal type="match" state=<<deleteAllState>> text="yes">
+Delete all <<totalCount>> revision(s) for this tiddler? The live tiddler is not affected.
+<$button>
+Yes, delete
+<$action-sendmessage $message="tm-delete-revision-history" tiddlerName=<<parentTitle>>/>
+<$action-setfield $tiddler=<<deleteAllState>> $value=""/>
+</$button>
+<$button>
+Cancel
+<$action-setfield $tiddler=<<deleteAllState>> $value=""/>
+</$button>
+</$reveal>
+</$list>
 
 <$reveal type="nomatch" state=<<showAllState>> text="all">
 <$reveal type="nomatch" state=<<sortStateKey>> text="asc">
@@ -142,6 +164,7 @@ Sort: <$reveal type="nomatch" state=<<sortStateKey>> text="asc">Newest first | <
 <$button set=<<showAllState>> setTo="">Show fewer</$button>
 </$reveal>
 
+</$set>
 </$set>
 </$set>
 </$set>

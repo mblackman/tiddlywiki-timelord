@@ -123,6 +123,63 @@ export function startup() {
 		}));
 	});
 
+	$tw.rootWidget.addEventListener("tm-compute-revision-stats", function() {
+		const stats = revisor.getStats(10);
+		const report = {
+			title: "$:/temp/mblackman/revision-history/stats",
+			text: "Computed at " + new Date().toISOString(),
+			"total-revisions": String(stats.totalRevisions),
+			"total-bytes": String(stats.totalBytes),
+			"chains-count": String(stats.chainsCount),
+			"broken-revisions": String(stats.brokenRevisions),
+			"top-by-count": JSON.stringify(stats.topByCount),
+		};
+		$tw.wiki.addTiddler(new $tw.Tiddler(report));
+
+		// Write one small tiddler per top entry so the UI can list them with filters
+		// without needing a JSON parser. Clear any prior top-N tiddlers first.
+		const prefix = "$:/temp/mblackman/revision-history/stats/top/";
+		const stale = [];
+		if ($tw.wiki.each) {
+			$tw.wiki.each(function(_t, title) {
+				if (title && title.indexOf(prefix) === 0) stale.push(title);
+			});
+		}
+		for (const t of stale) $tw.wiki.deleteTiddler(t);
+		stats.topByCount.forEach(function(entry, idx) {
+			const rank = String(idx + 1).padStart(2, "0");
+			$tw.wiki.addTiddler(new $tw.Tiddler({
+				title: prefix + rank,
+				text: entry.name,
+				rank: String(idx + 1),
+				"tiddler-name": entry.name,
+				"revision-count": String(entry.count),
+				"revision-bytes": String(entry.bytes),
+			}));
+		});
+	});
+
+	$tw.rootWidget.addEventListener("tm-delete-revision-history", function(event) {
+		const tiddlerName = event.paramObject && event.paramObject.tiddlerName;
+		if (!tiddlerName) return;
+		revisor.removeHistory(tiddlerName);
+	});
+
+	$tw.rootWidget.addEventListener("tm-delete-history-matching", function(event) {
+		const filter = event.paramObject && event.paramObject.filter;
+		if (!filter || !filter.trim()) return;
+		const result = revisor.removeHistoryMatchingFilter(filter);
+		$tw.wiki.addTiddler(new $tw.Tiddler({
+			title: "$:/temp/mblackman/revision-history/prune-report",
+			text: "Removed history for " + result.deletedChains + " tiddler(s); "
+				+ result.deletedRevisions + " revision(s) deleted.",
+			"deleted-chains": String(result.deletedChains),
+			"deleted-revisions": String(result.deletedRevisions),
+			"deleted-names": result.names.join("\n"),
+			"prune-time": String(Date.now()),
+		}));
+	});
+
 	$tw.rootWidget.addEventListener("tm-repair-revision-chains", function() {
 		const result = revisor.repairAllChains();
 		const s = result.summary;
