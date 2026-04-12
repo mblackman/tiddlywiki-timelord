@@ -1,0 +1,15 @@
+modified: 20260412062837576
+modifier: <anon>
+revision-changed-fields: text
+revision-content-hash: fd131030
+revision-data: {"created":"20260412062824664","text":"@@ -206,87 +206,4 @@\n . %0A%0A\n-Try restoring an older version, or make some edits yourself and see them captured!%0A\n","modified":"20260412062826342","revision-tag":"$:/plugins/mblackman/revision-history/revisions/6641f482"}
+revision-date: 1775975317576
+revision-full-hash: 25c10b0a
+revision-number: 2
+revision-of: Showcase
+revision-storage: delta
+revision-text-hash: ae375425
+revision-version: 1
+tags: $:/plugins/mblackman/revision-history/revisions/6641f482
+title: $:/plugins/mblackman/revision-history/revisions/6641f482/1775975317577-0
+type: text/vnd.tiddlywiki
