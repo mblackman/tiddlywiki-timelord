@@ -60,5 +60,10 @@ TiddlyWiki `>=5.3.0`.
 ## Usage
 
 Once a tiddler has been edited, the plugin automatically archives the previous version as a system tiddler.
+
 - To view revisions, diffs, and restore a tiddler, click the **Info** button on a tiddler and go to the **Revisions** tab.
 - To view or restore deleted tiddlers, open the sidebar and navigate to the **Deleted Tiddlers** tab.
+
+## Documentation
+
+Developer-facing documentation lives in [docs/](docs/README.md). Start there for architecture, data model, storage modes, integration points, and schema-versioning guidance.
