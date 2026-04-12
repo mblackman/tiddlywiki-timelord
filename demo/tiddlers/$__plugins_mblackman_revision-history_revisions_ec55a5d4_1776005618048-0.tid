@@ -1,0 +1,17 @@
+modified: 20260412145338046
+modifier: <anon>
+revision-changed-fields: text
+revision-content-hash: ba305700
+revision-data: {"created":"20260412145314625","text":"@@ -106,9 +106,8 @@\n in! \n-%0D\n %0AYou\n@@ -202,8 +202,25 @@\n con). %0A%0A\n+Test update body%0A\n","modified":"20260412145319017"}
+revision-date: 1776005618046
+revision-full-hash: fcbdf431
+revision-number: 2
+revision-of: Showcase
+revision-renamed-from: Showcase
+revision-renamed-to: Showcase - Update Title
+revision-storage: delta
+revision-text-hash: bb746e60
+revision-version: 1
+tags: $:/plugins/mblackman/revision-history/revisions/6641f482
+title: $:/plugins/mblackman/revision-history/revisions/ec55a5d4/1776005618048-0
+type: text/vnd.tiddlywiki

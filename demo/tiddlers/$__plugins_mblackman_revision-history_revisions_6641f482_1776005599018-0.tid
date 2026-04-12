@@ -1,0 +1,15 @@
+modified: 20260412145319018
+modifier: <anon>
+revision-changed-fields: title add tags type text revision bag
+revision-content-hash: 4a7bb553
+revision-data: {"add":"a field!","bag":"default","revision":"0","revision-tag":"$:/plugins/mblackman/revision-history/revisions/6641f482","tags":"","text":"This is the showcase tiddler. It has been edited a few times to demonstrate the ''Revision History'' plugin! \r\nYou can find the past versions in the ''Revisions'' tab under the ''Info'' panel (the \"i\" icon). \n\n","title":"Showcase","type":"text/vnd.tiddlywiki"}
+revision-date: 1776005599018
+revision-full-hash: 8d3e65ef
+revision-number: 1
+revision-of: Showcase
+revision-storage: full
+revision-text-hash: f094a012
+revision-version: 1
+tags: $:/plugins/mblackman/revision-history/revisions/6641f482
+title: $:/plugins/mblackman/revision-history/revisions/6641f482/1776005599018-0
+type: text/vnd.tiddlywiki
