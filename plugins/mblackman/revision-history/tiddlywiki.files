@@ -41,14 +41,6 @@
 			}
 		},
 		{
-			"file": "Changelog.tid",
-			"fields": {
-				"type": "text/vnd.tiddlywiki",
-				"title": "$:/plugins/mblackman/revision-history/Changelog",
-				"caption": "Changelog"
-			}
-		},
-		{
 			"file": "Revisions.tid",
 			"fields": {
 				"type": "text/vnd.tiddlywiki",
