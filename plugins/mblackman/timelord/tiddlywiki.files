@@ -4,7 +4,7 @@
 			"file": "lib/listener.js",
 			"fields": {
 				"type": "application/javascript",
-				"title": "$:/plugins/mblackman/revision-history/listener.js",
+				"title": "$:/plugins/mblackman/timelord/listener.js",
 				"module-type": "startup"
 			}
 		},
@@ -12,7 +12,7 @@
 			"file": "lib/revisor.js",
 			"fields": {
 				"type": "application/javascript",
-				"title": "$:/plugins/mblackman/revision-history/revisor.js",
+				"title": "$:/plugins/mblackman/timelord/revisor.js",
 				"module-type": "library"
 			}
 		},
@@ -20,7 +20,7 @@
 			"file": "lib/filters.js",
 			"fields": {
 				"type": "application/javascript",
-				"title": "$:/plugins/mblackman/revision-history/filters.js",
+				"title": "$:/plugins/mblackman/timelord/filters.js",
 				"module-type": "filteroperator"
 			}
 		},
@@ -28,15 +28,15 @@
 			"file": "Readme.tid",
 			"fields": {
 				"type": "text/vnd.tiddlywiki",
-				"title": "$:/plugins/mblackman/revision-history/Readme",
-				"caption": "Revision History Readme"
+				"title": "$:/plugins/mblackman/timelord/Readme",
+				"caption": "Timelord Readme"
 			}
 		},
 		{
 			"file": "styles.tid",
 			"fields": {
 				"type": "text/vnd.tiddlywiki",
-				"title": "$:/plugins/mblackman/revision-history/styles",
+				"title": "$:/plugins/mblackman/timelord/styles",
 				"tags": "$:/tags/Stylesheet"
 			}
 		},
@@ -44,7 +44,7 @@
 			"file": "Revisions.tid",
 			"fields": {
 				"type": "text/vnd.tiddlywiki",
-				"title": "$:/plugins/mblackman/revision-history/Revisions",
+				"title": "$:/plugins/mblackman/timelord/Revisions",
 				"caption": "Revisions",
 				"tags": "$:/tags/TiddlerInfo"
 			}
@@ -53,7 +53,7 @@
 			"file": "DeletedTiddlers.tid",
 			"fields": {
 				"type": "text/vnd.tiddlywiki",
-				"title": "$:/plugins/mblackman/revision-history/DeletedTiddlers",
+				"title": "$:/plugins/mblackman/timelord/DeletedTiddlers",
 				"caption": "Deleted Tiddlers",
 				"tags": "$:/tags/SideBar"
 			}
@@ -62,8 +62,8 @@
 			"file": "Settings.tid",
 			"fields": {
 				"type": "text/vnd.tiddlywiki",
-				"title": "$:/plugins/mblackman/revision-history/Settings",
-				"caption": "Revision History Settings",
+				"title": "$:/plugins/mblackman/timelord/Settings",
+				"caption": "Timelord Settings",
 				"tags": "$:/tags/ControlPanel/SettingsTab"
 			}
 		},
@@ -71,8 +71,8 @@
 			"file": "Stats.tid",
 			"fields": {
 				"type": "text/vnd.tiddlywiki",
-				"title": "$:/plugins/mblackman/revision-history/Stats",
-				"caption": "Revision History Stats",
+				"title": "$:/plugins/mblackman/timelord/Stats",
+				"caption": "Timelord Stats",
 				"tags": "$:/tags/ControlPanel/SettingsTab"
 			}
 		},
@@ -80,8 +80,8 @@
 			"file": "Help.tid",
 			"fields": {
 				"type": "text/vnd.tiddlywiki",
-				"title": "$:/plugins/mblackman/revision-history/Help",
-				"caption": "Revision History Help",
+				"title": "$:/plugins/mblackman/timelord/Help",
+				"caption": "Timelord Help",
 				"tags": "$:/tags/ControlPanel/SettingsTab"
 			}
 		}

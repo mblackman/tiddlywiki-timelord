@@ -1,19 +1,19 @@
 \define entry-template()
 <$set name="revisionTitle" value=<<currentTiddler>>>
-<$set name="diffStateCurrent" value={{{[<revisionTitle>addprefix[$:/state/revision-history/diff-current/]]}}}>
-<$set name="diffStatePrev" value={{{[<revisionTitle>addprefix[$:/state/revision-history/diff-prev/]]}}}>
-<$set name="fieldChangesState" value={{{[<revisionTitle>addprefix[$:/state/revision-history/field-changes/]]}}}>
+<$set name="diffStateCurrent" value={{{[<revisionTitle>addprefix[$:/state/timelord/diff-current/]]}}}>
+<$set name="diffStatePrev" value={{{[<revisionTitle>addprefix[$:/state/timelord/diff-prev/]]}}}>
+<$set name="fieldChangesState" value={{{[<revisionTitle>addprefix[$:/state/timelord/field-changes/]]}}}>
 <$set name="prevRevTitle" value={{{[tag<revisionTag>sort[revision-date]before<revisionTitle>last[]]}}}>
 <$set name="isBinary" value={{{[<revisionTitle>has[type]get[type]!prefix[text/]then[yes]else[no]]}}}>
 <$set name="charCount" value={{{[<revisionTitle>reconstructtext[]length[]]}}}>
 <$set name="revNum" value={{{[<revisionTitle>get[revision-number]]}}}>
 <$set name="brokenChain" value={{{[<revisionTitle>get[revision-broken-chain]]}}}>
 <$list filter="[<revNum>!match[]]" variable="ignored">#<<revNum>> · </$list><$link tiddler=<<revisionTitle>>><$view tiddler=<<revisionTitle>> field="modified" format="date" template="DDth MMM YYYY at 0hh:0mm"/></$link> by ''<$view tiddler=<<revisionTitle>> field="modifier"/>'' · <<charCount>> chars<$list filter="[<brokenChain>match[yes]]" variable="ignored"> · <span class="mblackman-rh-warning" title="This revision could not be reconstructed reliably — displayed content may be incorrect">⚠ broken chain</span></$list>
-<$reveal type="nomatch" state="$:/state/revision-history/restore-confirm" text=<<revisionTitle>>>
-<$button>Restore<$action-setfield $tiddler="$:/state/revision-history/restore-confirm" $value=<<revisionTitle>>/></$button>
+<$reveal type="nomatch" state="$:/state/timelord/restore-confirm" text=<<revisionTitle>>>
+<$button>Restore<$action-setfield $tiddler="$:/state/timelord/restore-confirm" $value=<<revisionTitle>>/></$button>
 </$reveal>
-<$reveal type="match" state="$:/state/revision-history/restore-confirm" text=<<revisionTitle>>>
-Restore this version? <$button>Yes<$action-sendmessage $message="tm-restore-revision" revisionTitle=<<revisionTitle>>/><$action-setfield $tiddler="$:/state/revision-history/restore-confirm" $value=""/></$button> <$button>No<$action-setfield $tiddler="$:/state/revision-history/restore-confirm" $value=""/></$button>
+<$reveal type="match" state="$:/state/timelord/restore-confirm" text=<<revisionTitle>>>
+Restore this version? <$button>Yes<$action-sendmessage $message="tm-restore-revision" revisionTitle=<<revisionTitle>>/><$action-setfield $tiddler="$:/state/timelord/restore-confirm" $value=""/></$button> <$button>No<$action-setfield $tiddler="$:/state/timelord/restore-confirm" $value=""/></$button>
 </$reveal>
 <$reveal type="nomatch" state=<<diffStateCurrent>> text="open">
 <$button set=<<diffStateCurrent>> setTo="open">Diff vs. current</$button>
@@ -64,7 +64,7 @@ Restore this version? <$button>Yes<$action-sendmessage $message="tm-restore-revi
 </$reveal>
 </$list>
 </$set></$set>
-<$set name="diffSizeLimit" value={{{[[$:/config/mblackman/revision-history/diff-size-limit]get[text]else[102400]]}}}>
+<$set name="diffSizeLimit" value={{{[[$:/config/mblackman/timelord/diff-size-limit]get[text]else[102400]]}}}>
 <$reveal type="match" state=<<diffStateCurrent>> text="open">
 <$list filter="[<isBinary>match[yes]]" variable="ignored">Binary content — cannot diff.</$list>
 <$list filter="[<isBinary>match[no]]" variable="ignored">
@@ -106,9 +106,9 @@ Restore this version? <$button>Yes<$action-sendmessage $message="tm-restore-revi
 
 <$set name="parentTitle" value=<<currentTiddler>>>
 <$set name="revisionTag" value={{!!revision-tag}}>
-<$set name="showAllState" value={{{[[$:/state/revision-history/show-all/]addsuffix<parentTitle>]}}}>
-<$set name="sortStateKey" value={{{[[$:/state/revision-history/sort/]addsuffix<parentTitle>]}}}>
-<$set name="deleteAllState" value={{{[[$:/state/revision-history/delete-all/]addsuffix<parentTitle>]}}}>
+<$set name="showAllState" value={{{[[$:/state/timelord/show-all/]addsuffix<parentTitle>]}}}>
+<$set name="sortStateKey" value={{{[[$:/state/timelord/sort/]addsuffix<parentTitle>]}}}>
+<$set name="deleteAllState" value={{{[[$:/state/timelord/delete-all/]addsuffix<parentTitle>]}}}>
 <$set name="totalCount" value={{{[tag<revisionTag>count[]]}}}>
 
 Sort: <$reveal type="nomatch" state=<<sortStateKey>> text="asc">Newest first | <$button set=<<sortStateKey>> setTo="asc">Oldest first</$button></$reveal><$reveal type="match" state=<<sortStateKey>> text="asc"><$button set=<<sortStateKey>> setTo="">Newest first</$button> | Oldest first</$reveal>
@@ -124,7 +124,7 @@ Delete all history (<<totalCount>>)
 Delete all <<totalCount>> revision(s) for this tiddler? The live tiddler is not affected.
 <$button>
 Yes, delete
-<$action-sendmessage $message="tm-delete-revision-history" tiddlerName=<<parentTitle>>/>
+<$action-sendmessage $message="tm-delete-timelord" tiddlerName=<<parentTitle>>/>
 <$action-setfield $tiddler=<<deleteAllState>> $value=""/>
 </$button>
 <$button>

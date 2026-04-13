@@ -1,6 +1,6 @@
 ! Revision Tracking
 
-<$checkbox tiddler="$:/config/mblackman/revision-history/enabled" field="text" checked="yes" unchecked="no" default="yes"> Enable revision tracking</$checkbox>
+<$checkbox tiddler="$:/config/mblackman/timelord/enabled" field="text" checked="yes" unchecked="no" default="yes"> Enable revision tracking</$checkbox>
 
 //Uncheck before bulk imports, then re-enable when done.//
 
@@ -10,7 +10,7 @@
 
 Tiddlers matching this filter will not be tracked (leave blank to track all):
 
-<$edit-text tiddler="$:/config/mblackman/revision-history/exclude-filter" field="text" tag="input" default="" placeholder="e.g. [tag[NoTrack]]" class="tc-edit-texteditor"/>
+<$edit-text tiddler="$:/config/mblackman/timelord/exclude-filter" field="text" tag="input" default="" placeholder="e.g. [tag[NoTrack]]" class="tc-edit-texteditor"/>
 
 //Example: ''[tag[NoTrack]]'' skips any tiddler tagged ~NoTrack.//
 
@@ -20,7 +20,7 @@ Tiddlers matching this filter will not be tracked (leave blank to track all):
 
 Maximum reconstructed text length (in characters) before the diff view falls back to showing raw text. Default: 102400 (100&nbsp;KB).
 
-<$edit-text tiddler="$:/config/mblackman/revision-history/diff-size-limit" field="text" tag="input" default="102400" class="tc-edit-texteditor"/>
+<$edit-text tiddler="$:/config/mblackman/timelord/diff-size-limit" field="text" tag="input" default="102400" class="tc-edit-texteditor"/>
 
 //Guards the UI against lag on pathologically large tiddlers.//
 
@@ -31,7 +31,7 @@ Maximum reconstructed text length (in characters) before the diff view falls bac
 Scan every revision chain in the wiki to detect corruption (missing snapshots, patch failures, hash drift). Run ''Verify'' first; ''Repair'' flags unreconstructable revisions with `revision-broken-chain` so the UI can surface them.
 
 <$button>
-Verify revision history
+Verify timelord
 <$action-sendmessage $message="tm-verify-revision-chains"/>
 </$button>
 <$button>
@@ -39,8 +39,8 @@ Repair broken chains
 <$action-sendmessage $message="tm-repair-revision-chains"/>
 </$button>
 
-<$reveal type="nomatch" state="$:/temp/mblackman/revision-history/verify-report" text="">
+<$reveal type="nomatch" state="$:/temp/mblackman/timelord/verify-report" text="">
 <div class="mblackman-rh-report-box">
-<$transclude tiddler="$:/temp/mblackman/revision-history/verify-report" mode="block"/>
+<$transclude tiddler="$:/temp/mblackman/timelord/verify-report" mode="block"/>
 </div>
 </$reveal>

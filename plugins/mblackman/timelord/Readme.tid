@@ -1,6 +1,6 @@
-[[Repository|https://github.com/mblackman/tiddlywiki-revision-history]]
+[[Repository|https://github.com/mblackman/tiddlywiki-timelord]]
 
-This plugin adds the ability to automatically store and display revision history. It is dependent on a slight modification of the core to add an additional hook in navigator.js.
+This plugin adds the ability to automatically store and display timelord. It is dependent on a slight modification of the core to add an additional hook in navigator.js.
 
 Every time you edit a tiddler, the plugin will create an internal copy of the previous tiddler. These revisions can be viewed through a new tab in the info panel.
 

@@ -1,7 +1,7 @@
-\define stats-tiddler() $:/temp/mblackman/revision-history/stats
-\define top-prefix() $:/temp/mblackman/revision-history/stats/top/
-\define prune-filter-tiddler() $:/config/mblackman/revision-history/prune-filter
-\define prune-report() $:/temp/mblackman/revision-history/prune-report
+\define stats-tiddler() $:/temp/mblackman/timelord/stats
+\define top-prefix() $:/temp/mblackman/timelord/stats/top/
+\define prune-filter-tiddler() $:/config/mblackman/timelord/prune-filter
+\define prune-report() $:/temp/mblackman/timelord/prune-report
 
 ! Storage Overview
 
@@ -28,7 +28,7 @@ Refresh stats
 |Broken revisions |<<broken>> |
 
 <$list filter="[<broken>compare:number:gt[0]]" variable="ignored">
-//Broken revisions were detected. Use the ''Verify'' / ''Repair'' actions in the Revision History Settings tab.//
+//Broken revisions were detected. Use the ''Verify'' / ''Repair'' actions in the Timelord Settings tab.//
 </$list>
 
 !! Top tiddlers by revision count
@@ -43,7 +43,7 @@ Refresh stats
 
 ! Prune History By Filter
 
-Remove revision history for every tiddler matching a filter. The ''live'' tiddlers are not affected — only their revisions. This is irreversible.
+Remove timelord for every tiddler matching a filter. The ''live'' tiddlers are not affected — only their revisions. This is irreversible.
 
 Filter:
 
@@ -53,7 +53,7 @@ Filter:
 <$list filter="[<pruneFilter>!match[]]" variable="ignored">
 <$set name="matchCount" value={{{[subfilter<pruneFilter>count[]]}}}>
 
-''<<matchCount>>'' tiddler(s) match this filter (not all will have revision history).
+''<<matchCount>>'' tiddler(s) match this filter (not all will have timelord).
 
 <details>
 <summary>Show matching tiddler names</summary>
@@ -62,23 +62,23 @@ Filter:
 </$list>
 </details>
 
-<$reveal type="nomatch" state="$:/state/revision-history/prune-confirm" text="yes">
+<$reveal type="nomatch" state="$:/state/timelord/prune-confirm" text="yes">
 <$button>
 Delete history matching filter
-<$action-setfield $tiddler="$:/state/revision-history/prune-confirm" $value="yes"/>
+<$action-setfield $tiddler="$:/state/timelord/prune-confirm" $value="yes"/>
 </$button>
 </$reveal>
-<$reveal type="match" state="$:/state/revision-history/prune-confirm" text="yes">
-Really delete revision history for every matching tiddler?
+<$reveal type="match" state="$:/state/timelord/prune-confirm" text="yes">
+Really delete timelord for every matching tiddler?
 <$button>
 Yes, prune
 <$action-sendmessage $message="tm-delete-history-matching" filter=<<pruneFilter>>/>
-<$action-setfield $tiddler="$:/state/revision-history/prune-confirm" $value=""/>
+<$action-setfield $tiddler="$:/state/timelord/prune-confirm" $value=""/>
 <$action-sendmessage $message="tm-compute-revision-stats"/>
 </$button>
 <$button>
 Cancel
-<$action-setfield $tiddler="$:/state/revision-history/prune-confirm" $value=""/>
+<$action-setfield $tiddler="$:/state/timelord/prune-confirm" $value=""/>
 </$button>
 </$reveal>
 </$set>

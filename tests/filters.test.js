@@ -1,6 +1,6 @@
 const { resetTw } = require('./mock-tw');
-const { generateTag, Revisor } = require('../plugins/mblackman/revision-history/src/revisor');
-const { reconstructtext, revisionchangedfields, reconstructfield } = require('../plugins/mblackman/revision-history/src/filters');
+const { generateTag, Revisor } = require('../plugins/mblackman/timelord/src/revisor');
+const { reconstructtext, revisionchangedfields, reconstructfield } = require('../plugins/mblackman/timelord/src/filters');
 const DMP = require('diff-match-patch');
 
 beforeEach(() => {

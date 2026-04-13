@@ -4,7 +4,7 @@
         "tiddlywiki/tiddlyweb",
         "tiddlywiki/filesystem",
         "tiddlywiki/highlight",
-        "mblackman/revision-history"
+        "mblackman/timelord"
     ],
     "themes": [
         "tiddlywiki/vanilla",
@@ -36,10 +36,10 @@
             "static/static.css",
             "text/plain"
         ],
-        "revision-history": [
+        "timelord": [
             "--rendertiddler",
-            "$:/plugins/mblackman/revision-history",
-            "revision-history.tid",
+            "$:/plugins/mblackman/timelord",
+            "timelord.tid",
             "text/plain",
             "$:/core/templates/exporters/TidFile",
             "exportFilter",

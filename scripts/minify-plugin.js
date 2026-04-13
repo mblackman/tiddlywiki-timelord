@@ -7,7 +7,7 @@ const libDir = path.join(
     "..",
     "plugins",
     "mblackman",
-    "revision-history",
+    "timelord",
     "lib"
 );
 

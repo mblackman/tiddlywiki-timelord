@@ -16,7 +16,7 @@ src/listener.js     → lib/listener.js    (startup module: hooks + widget messa
 src/filters.js      → lib/filters.js     (three filter operators used by the UI)
 ```
 
-Babel transpiles ES modules in `src/` to CommonJS in `lib/`. `tiddlywiki.files` maps the three `lib/*.js` files to their TW module titles (`$:/plugins/mblackman/revision-history/revisor.js`, etc.) with module type `application/javascript`, plus all `.tid` files at the plugin root.
+Babel transpiles ES modules in `src/` to CommonJS in `lib/`. `tiddlywiki.files` maps the three `lib/*.js` files to their TW module titles (`$:/plugins/mblackman/timelord/revisor.js`, etc.) with module type `application/javascript`, plus all `.tid` files at the plugin root.
 
 The three JS modules are deliberately small and have clear responsibilities:
 
@@ -33,7 +33,7 @@ The three JS modules are deliberately small and have clear responsibilities:
 ### Save
 
 1. User saves a draft in the editor. TiddlyWiki fires `th-saving-tiddler(newTiddler, draft)` (TW ≥ 5.3.x).
-2. `listener.js` guards: the plugin must be enabled (`$:/config/mblackman/revision-history/enabled`), neither old nor new titles can be system/shadow, and the new title must not match the exclusion filter.
+2. `listener.js` guards: the plugin must be enabled (`$:/config/mblackman/timelord/enabled`), neither old nor new titles can be system/shadow, and the new title must not match the exclusion filter.
 3. The listener reads `draft.of` to discover the pre-save title. If it differs, it's a rename — `Revisor.renameHistory(oldTitle, newTitle)` runs before anything else.
 4. The listener injects a `revision-tag` field on the saved tiddler so the UI can look up history quickly (`[tag<revisionTag>...]`).
 5. If `tiddlerFieldsChanged(oldTiddler, newTiddler)` returns `false` (only auto-fields like `modified` moved), no revision is written.
@@ -58,7 +58,7 @@ The three JS modules are deliberately small and have clear responsibilities:
    - Snapshots the current live tiddler first (so the restore itself is undoable).
    - Rebuilds the full field state via `reconstructAllFields`.
    - Strips revision-only fields, re-adds `revision-tag`, and writes the live tiddler.
-   - Temporarily flips `$:/config/mblackman/revision-history/enabled` to `no` while applying the restore, so the write itself does not create an extra revision.
+   - Temporarily flips `$:/config/mblackman/timelord/enabled` to `no` while applying the restore, so the write itself does not create an extra revision.
    - If the restored title differs from the current live title, deletes the current tiddler, renames the history via `renameHistory`, and patches `$:/StoryList` so the user still sees the restored tiddler in the open list.
 
 ## Data flow diagram (save path)

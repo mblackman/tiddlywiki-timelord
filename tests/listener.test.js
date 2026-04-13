@@ -1,5 +1,5 @@
 const { resetTw } = require('./mock-tw');
-const { generateTag } = require('../plugins/mblackman/revision-history/src/revisor');
+const { generateTag } = require('../plugins/mblackman/timelord/src/revisor');
 
 // listener.js registers hooks on $tw at startup() call time, so we
 // re-require it fresh for each describe block via beforeEach.
@@ -13,7 +13,7 @@ beforeEach(() => {
   // Clear the module cache so startup() registers fresh hooks each time
   jest.resetModules();
   // Re-require to get a fresh module with new Revisor instance
-  ({ startup } = require('../plugins/mblackman/revision-history/src/listener'));
+  ({ startup } = require('../plugins/mblackman/timelord/src/listener'));
 });
 
 afterEach(() => {
@@ -201,7 +201,7 @@ describe('th-saving-tiddler hook', () => {
   it('respects the global enabled toggle', () => {
     // Disable tracking
     $tw.wiki.addTiddler(new $tw.Tiddler({
-      title: '$:/config/mblackman/revision-history/enabled',
+      title: '$:/config/mblackman/timelord/enabled',
       text: 'no',
     }));
 
@@ -234,7 +234,7 @@ describe('th-saving-tiddler hook', () => {
     const origFilter = $tw.wiki.filterTiddlers;
     $tw.wiki.filterTiddlers = (filter) => ['Doc'];
     $tw.wiki.addTiddler(new $tw.Tiddler({
-      title: '$:/config/mblackman/revision-history/exclude-filter',
+      title: '$:/config/mblackman/timelord/exclude-filter',
       text: '[tag[excluded]]',
     }));
 
@@ -293,7 +293,7 @@ describe('th-deleting-tiddler hook', () => {
 
   it('returns the tiddler unchanged when disabled', () => {
     $tw.wiki.addTiddler(new $tw.Tiddler({
-      title: '$:/config/mblackman/revision-history/enabled',
+      title: '$:/config/mblackman/timelord/enabled',
       text: 'no',
     }));
 
@@ -331,7 +331,7 @@ describe('th-deleting-tiddler hook', () => {
     const origFilter = $tw.wiki.filterTiddlers;
     $tw.wiki.filterTiddlers = () => ['ExcludedDoc'];
     $tw.wiki.addTiddler(new $tw.Tiddler({
-      title: '$:/config/mblackman/revision-history/exclude-filter',
+      title: '$:/config/mblackman/timelord/exclude-filter',
       text: '[tag[excluded]]',
     }));
 
@@ -348,7 +348,7 @@ describe('th-deleting-tiddler hook', () => {
 
   it('ignores an empty-whitespace exclude filter', () => {
     $tw.wiki.addTiddler(new $tw.Tiddler({
-      title: '$:/config/mblackman/revision-history/exclude-filter',
+      title: '$:/config/mblackman/timelord/exclude-filter',
       text: '   ',
     }));
 
@@ -365,7 +365,7 @@ describe('th-deleting-tiddler hook', () => {
     const origFilter = $tw.wiki.filterTiddlers;
     $tw.wiki.filterTiddlers = () => ['SomeOtherDoc'];
     $tw.wiki.addTiddler(new $tw.Tiddler({
-      title: '$:/config/mblackman/revision-history/exclude-filter',
+      title: '$:/config/mblackman/timelord/exclude-filter',
       text: '[tag[something]]',
     }));
 
@@ -456,7 +456,7 @@ describe('th-saving-tiddler — branch coverage', () => {
 
   it('ignores an empty-whitespace exclude filter', () => {
     $tw.wiki.addTiddler(new $tw.Tiddler({
-      title: '$:/config/mblackman/revision-history/exclude-filter',
+      title: '$:/config/mblackman/timelord/exclude-filter',
       text: '   ',
     }));
 
@@ -552,7 +552,7 @@ describe('th-saving-tiddler — exclude filter nuances', () => {
 
     $tw.wiki.filterTiddlers = () => ['OtherDoc'];
     $tw.wiki.addTiddler(new $tw.Tiddler({
-      title: '$:/config/mblackman/revision-history/exclude-filter',
+      title: '$:/config/mblackman/timelord/exclude-filter',
       text: '[tag[excluded]]',
     }));
 
@@ -576,7 +576,7 @@ describe('tm-verify-revision-chains — mixed chain output', () => {
 
     const goodTag = generateTag('Good');
     $tw.wiki.addTiddler(new $tw.Tiddler({
-      title: '$:/plugins/mblackman/revision-history/revisions/ggg/1000-0',
+      title: '$:/plugins/mblackman/timelord/revisions/ggg/1000-0',
       tags: '[[' + goodTag + ']]',
       'revision-of': 'Good',
       'revision-date': 1000,
@@ -586,7 +586,7 @@ describe('tm-verify-revision-chains — mixed chain output', () => {
 
     const badTag = generateTag('Bad');
     $tw.wiki.addTiddler(new $tw.Tiddler({
-      title: '$:/plugins/mblackman/revision-history/revisions/bbb/1000-0',
+      title: '$:/plugins/mblackman/timelord/revisions/bbb/1000-0',
       tags: '[[' + badTag + ']]',
       'revision-of': 'Bad',
       'revision-date': 1000,
@@ -597,7 +597,7 @@ describe('tm-verify-revision-chains — mixed chain output', () => {
     const listener = $tw.rootWidget._listeners['tm-verify-revision-chains'][0];
     listener({});
 
-    const report = $tw.wiki.getTiddler('$:/temp/mblackman/revision-history/verify-report');
+    const report = $tw.wiki.getTiddler('$:/temp/mblackman/timelord/verify-report');
     expect(report.getFieldString('broken-chains')).toBe('1');
     expect(report.getFieldString('total-chains')).toBe('2');
     expect(report.getFieldString('text')).toContain('Bad');
@@ -612,7 +612,7 @@ describe('tm-verify-revision-chains — mixed chain output', () => {
     // revision with a poisoned-hash sibling in the SAME chain.
     const tag = generateTag('Mix');
     $tw.wiki.addTiddler(new $tw.Tiddler({
-      title: '$:/plugins/mblackman/revision-history/revisions/mmm/1000-0',
+      title: '$:/plugins/mblackman/timelord/revisions/mmm/1000-0',
       tags: '[[' + tag + ']]',
       'revision-of': 'Mix',
       'revision-date': 1000,
@@ -620,7 +620,7 @@ describe('tm-verify-revision-chains — mixed chain output', () => {
       'revision-data': JSON.stringify({ text: 'ok1' }),
     }));
     $tw.wiki.addTiddler(new $tw.Tiddler({
-      title: '$:/plugins/mblackman/revision-history/revisions/mmm/2000-0',
+      title: '$:/plugins/mblackman/timelord/revisions/mmm/2000-0',
       tags: '[[' + tag + ']]',
       'revision-of': 'Mix',
       'revision-date': 2000,
@@ -632,7 +632,7 @@ describe('tm-verify-revision-chains — mixed chain output', () => {
     const listener = $tw.rootWidget._listeners['tm-verify-revision-chains'][0];
     listener({});
 
-    const report = $tw.wiki.getTiddler('$:/temp/mblackman/revision-history/verify-report');
+    const report = $tw.wiki.getTiddler('$:/temp/mblackman/timelord/verify-report');
     expect(report.getFieldString('broken-chains')).toBe('1');
     const text = report.getFieldString('text');
     // Broken-revision bullet should refer to the poisoned title
@@ -647,7 +647,7 @@ describe('tm-verify-revision-chains — mixed chain output', () => {
     // computed state). Simplest way: add a "full" revision whose stored full-hash is wrong.
     const tag = generateTag('Hashy');
     $tw.wiki.addTiddler(new $tw.Tiddler({
-      title: '$:/plugins/mblackman/revision-history/revisions/hhh/1000-0',
+      title: '$:/plugins/mblackman/timelord/revisions/hhh/1000-0',
       tags: '[[' + tag + ']]',
       'revision-of': 'Hashy',
       'revision-date': 1000,
@@ -659,7 +659,7 @@ describe('tm-verify-revision-chains — mixed chain output', () => {
     const listener = $tw.rootWidget._listeners['tm-verify-revision-chains'][0];
     listener({});
 
-    const report = $tw.wiki.getTiddler('$:/temp/mblackman/revision-history/verify-report');
+    const report = $tw.wiki.getTiddler('$:/temp/mblackman/timelord/verify-report');
     expect(report.getFieldString('broken-chains')).toBe('1');
     expect(report.getFieldString('text')).toContain('Hashy');
   });
@@ -680,7 +680,7 @@ describe('tm-verify-revision-chains event', () => {
     const listener = $tw.rootWidget._listeners['tm-verify-revision-chains'][0];
     listener({});
 
-    const report = $tw.wiki.getTiddler('$:/temp/mblackman/revision-history/verify-report');
+    const report = $tw.wiki.getTiddler('$:/temp/mblackman/timelord/verify-report');
     expect(report).toBeTruthy();
     expect(report.getFieldString('total-chains')).toBe('0');
     expect(report.getFieldString('broken-chains')).toBe('0');
@@ -693,7 +693,7 @@ describe('tm-verify-revision-chains event', () => {
     // verifyAllChains discovers chains by scanning tiddler titles that start with
     // the plugin's revisions baseName, so use a realistic title here.
     const tag = generateTag('Bad');
-    const revTitle = '$:/plugins/mblackman/revision-history/revisions/badhash/1000-0';
+    const revTitle = '$:/plugins/mblackman/timelord/revisions/badhash/1000-0';
     $tw.wiki.addTiddler(new $tw.Tiddler({
       title: revTitle,
       tags: '[[' + tag + ']]',
@@ -706,7 +706,7 @@ describe('tm-verify-revision-chains event', () => {
     const listener = $tw.rootWidget._listeners['tm-verify-revision-chains'][0];
     listener({});
 
-    const report = $tw.wiki.getTiddler('$:/temp/mblackman/revision-history/verify-report');
+    const report = $tw.wiki.getTiddler('$:/temp/mblackman/timelord/verify-report');
     expect(report.getFieldString('broken-chains')).toBe('1');
     expect(report.getFieldString('text')).toContain('Bad');
     expect(report.getFieldString('text')).toContain('no preceding full snapshot');
@@ -728,7 +728,7 @@ describe('tm-compute-revision-stats event', () => {
 
     const tag = generateTag('A');
     $tw.wiki.addTiddler(new $tw.Tiddler({
-      title: '$:/plugins/mblackman/revision-history/revisions/aaa/1000-0',
+      title: '$:/plugins/mblackman/timelord/revisions/aaa/1000-0',
       tags: '[[' + tag + ']]',
       'revision-of': 'A',
       'revision-date': 1000,
@@ -739,12 +739,12 @@ describe('tm-compute-revision-stats event', () => {
     const listener = $tw.rootWidget._listeners['tm-compute-revision-stats'][0];
     listener({});
 
-    const report = $tw.wiki.getTiddler('$:/temp/mblackman/revision-history/stats');
+    const report = $tw.wiki.getTiddler('$:/temp/mblackman/timelord/stats');
     expect(report).toBeTruthy();
     expect(report.getFieldString('total-revisions')).toBe('1');
     expect(report.getFieldString('chains-count')).toBe('1');
 
-    const top = $tw.wiki.getTiddler('$:/temp/mblackman/revision-history/stats/top/01');
+    const top = $tw.wiki.getTiddler('$:/temp/mblackman/timelord/stats/top/01');
     expect(top).toBeTruthy();
     expect(top.getFieldString('tiddler-name')).toBe('A');
     expect(top.getFieldString('revision-count')).toBe('1');
@@ -755,21 +755,21 @@ describe('tm-compute-revision-stats event', () => {
 
     // Seed a stale top entry that isn't in the current wiki state
     $tw.wiki.addTiddler(new $tw.Tiddler({
-      title: '$:/temp/mblackman/revision-history/stats/top/99',
+      title: '$:/temp/mblackman/timelord/stats/top/99',
       text: 'GhostTiddler',
     }));
 
     const listener = $tw.rootWidget._listeners['tm-compute-revision-stats'][0];
     listener({});
 
-    expect($tw.wiki.getTiddler('$:/temp/mblackman/revision-history/stats/top/99')).toBeNull();
+    expect($tw.wiki.getTiddler('$:/temp/mblackman/timelord/stats/top/99')).toBeNull();
   });
 });
 
-describe('tm-delete-revision-history event', () => {
+describe('tm-delete-timelord event', () => {
   it('registers an event listener', () => {
     startup();
-    expect($tw.rootWidget._listeners['tm-delete-revision-history']).toHaveLength(1);
+    expect($tw.rootWidget._listeners['tm-delete-timelord']).toHaveLength(1);
   });
 
   it('removes every revision for the named tiddler', () => {
@@ -778,14 +778,14 @@ describe('tm-delete-revision-history event', () => {
     const tag = generateTag('A');
     for (let i = 0; i < 3; i++) {
       $tw.wiki.addTiddler(new $tw.Tiddler({
-        title: '$:/plugins/mblackman/revision-history/revisions/aaa/' + (1000 + i) + '-0',
+        title: '$:/plugins/mblackman/timelord/revisions/aaa/' + (1000 + i) + '-0',
         tags: '[[' + tag + ']]',
         'revision-of': 'A',
         'revision-date': 1000 + i,
       }));
     }
 
-    const listener = $tw.rootWidget._listeners['tm-delete-revision-history'][0];
+    const listener = $tw.rootWidget._listeners['tm-delete-timelord'][0];
     listener({ paramObject: { tiddlerName: 'A' } });
 
     expect($tw.wiki.getTiddlersWithTag(tag)).toEqual([]);
@@ -793,7 +793,7 @@ describe('tm-delete-revision-history event', () => {
 
   it('is a no-op when tiddlerName is missing', () => {
     startup();
-    const listener = $tw.rootWidget._listeners['tm-delete-revision-history'][0];
+    const listener = $tw.rootWidget._listeners['tm-delete-timelord'][0];
     // Should not throw
     listener({});
     listener({ paramObject: {} });
@@ -812,13 +812,13 @@ describe('tm-delete-history-matching event', () => {
     const tagA = generateTag('A');
     const tagB = generateTag('B');
     $tw.wiki.addTiddler(new $tw.Tiddler({
-      title: '$:/plugins/mblackman/revision-history/revisions/aaa/1000-0',
+      title: '$:/plugins/mblackman/timelord/revisions/aaa/1000-0',
       tags: '[[' + tagA + ']]',
       'revision-of': 'A',
       'revision-date': 1000,
     }));
     $tw.wiki.addTiddler(new $tw.Tiddler({
-      title: '$:/plugins/mblackman/revision-history/revisions/bbb/2000-0',
+      title: '$:/plugins/mblackman/timelord/revisions/bbb/2000-0',
       tags: '[[' + tagB + ']]',
       'revision-of': 'B',
       'revision-date': 2000,
@@ -832,7 +832,7 @@ describe('tm-delete-history-matching event', () => {
     expect($tw.wiki.getTiddlersWithTag(tagA)).toEqual([]);
     expect($tw.wiki.getTiddlersWithTag(tagB)).toHaveLength(1);
 
-    const report = $tw.wiki.getTiddler('$:/temp/mblackman/revision-history/prune-report');
+    const report = $tw.wiki.getTiddler('$:/temp/mblackman/timelord/prune-report');
     expect(report).toBeTruthy();
     expect(report.getFieldString('deleted-chains')).toBe('1');
     expect(report.getFieldString('deleted-revisions')).toBe('1');
@@ -847,7 +847,7 @@ describe('tm-delete-history-matching event', () => {
     listener({ paramObject: { filter: '' } });
     listener({ paramObject: { filter: '   ' } });
 
-    expect($tw.wiki.getTiddler('$:/temp/mblackman/revision-history/prune-report')).toBeNull();
+    expect($tw.wiki.getTiddler('$:/temp/mblackman/timelord/prune-report')).toBeNull();
   });
 });
 
@@ -861,7 +861,7 @@ describe('tm-repair-revision-chains event', () => {
     startup();
 
     const tag = generateTag('Bad');
-    const revTitle = '$:/plugins/mblackman/revision-history/revisions/badhash/1000-0';
+    const revTitle = '$:/plugins/mblackman/timelord/revisions/badhash/1000-0';
     $tw.wiki.addTiddler(new $tw.Tiddler({
       title: revTitle,
       tags: '[[' + tag + ']]',
@@ -877,7 +877,7 @@ describe('tm-repair-revision-chains event', () => {
     const rev = $tw.wiki.getTiddler(revTitle);
     expect(rev.getFieldString('revision-broken-chain')).toBe('yes');
 
-    const report = $tw.wiki.getTiddler('$:/temp/mblackman/revision-history/verify-report');
+    const report = $tw.wiki.getTiddler('$:/temp/mblackman/timelord/verify-report');
     expect(report.getFieldString('marked')).toBe('1');
     expect(report.getFieldString('chains-repaired')).toBe('1');
   });

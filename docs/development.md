@@ -17,7 +17,7 @@ Babel transpiles ES modules in `src/` to CommonJS in `lib/` (required because TW
 
 ```bash
 npm run babel           # src/ → lib/
-npm run build-plugin    # babel + package plugin as build/revision-history.tid
+npm run build-plugin    # babel + package plugin as build/timelord.tid
 npm run build-demo      # build the demo wiki HTML to build/index.html
 npm run build-debug     # build the debug wiki HTML to build/index.html
 npm run build-all       # build-plugin + build-demo
@@ -107,20 +107,20 @@ The mock `$tw` is intentionally minimal — add methods to it only when a test n
 
 ## Continuous integration
 
-[`.github/workflows/ci.yml`](../.github/workflows/ci.yml) runs on every push to `master` and every pull request. It installs dependencies with `npm ci`, runs `npm test`, then `npm run build-all`, and uploads `build/revision-history.tid` as a workflow artifact. PRs that break tests or the build are blocked from merging.
+[`.github/workflows/ci.yml`](../.github/workflows/ci.yml) runs on every push to `master` and every pull request. It installs dependencies with `npm ci`, runs `npm test`, then `npm run build-all`, and uploads `build/timelord.tid` as a workflow artifact. PRs that break tests or the build are blocked from merging.
 
 [`.github/workflows/gh-pages.yml`](../.github/workflows/gh-pages.yml) rebuilds the demo site from `master` and publishes it to GitHub Pages.
 
 ## Release
 
-Releases are cut by pushing a `v<version>` tag. [`.github/workflows/release.yml`](../.github/workflows/release.yml) then runs tests, builds the plugin, and creates a GitHub Release with `build/revision-history.tid` attached and auto-generated notes from the commit log.
+Releases are cut by pushing a `v<version>` tag. [`.github/workflows/release.yml`](../.github/workflows/release.yml) then runs tests, builds the plugin, and creates a GitHub Release with `build/timelord.tid` attached and auto-generated notes from the commit log.
 
 ### Version fields
 
 | Field | Where | Purpose |
 | ----- | ----- | ------- |
-| `plugin.info`.`version` | [plugins/mblackman/revision-history/plugin.info](../plugins/mblackman/revision-history/plugin.info) | The plugin version users see in TiddlyWiki's plugin manager. **This is the field the release tag must match.** |
-| `SCHEMA_VERSION` | [plugins/mblackman/revision-history/src/revisor.js](../plugins/mblackman/revision-history/src/revisor.js) | On-disk revision format version. Bump only on breaking data changes — see [schema-versioning.md](schema-versioning.md). |
+| `plugin.info`.`version` | [plugins/mblackman/timelord/plugin.info](../plugins/mblackman/timelord/plugin.info) | The plugin version users see in TiddlyWiki's plugin manager. **This is the field the release tag must match.** |
+| `SCHEMA_VERSION` | [plugins/mblackman/timelord/src/revisor.js](../plugins/mblackman/timelord/src/revisor.js) | On-disk revision format version. Bump only on breaking data changes — see [schema-versioning.md](schema-versioning.md). |
 | `package.json`.`version` | repo root | Unused at runtime. Keep it in sync with `plugin.info`.`version` if you update it at all; the release workflow ignores it. |
 
 The plugin version is independent of `SCHEMA_VERSION`. Most releases bump `plugin.info`.`version` only. Bump `SCHEMA_VERSION` **in addition** to the plugin version when the change meets the criteria in [schema-versioning.md](schema-versioning.md).
@@ -130,10 +130,10 @@ The plugin version is independent of `SCHEMA_VERSION`. Most releases bump `plugi
 1. Ensure `master` is green on CI.
 2. Decide the new version (semver — breaking data format = major, new user-visible features = minor, bug fixes = patch).
 3. Bump `plugin.info`.`version`. If the change affects revision tiddler format, also bump `SCHEMA_VERSION` and add a row to the history table in [schema-versioning.md](schema-versioning.md).
-4. Update [Changelog.tid](../plugins/mblackman/revision-history/Changelog.tid): rename the `Unreleased` section to `<version> — <YYYY-MM-DD>` and start a new empty `Unreleased` section above it. List user-visible changes only — developer-facing refactors belong in the commit log, not the changelog.
+4. Update [Changelog.tid](../plugins/mblackman/timelord/Changelog.tid): rename the `Unreleased` section to `<version> — <YYYY-MM-DD>` and start a new empty `Unreleased` section above it. List user-visible changes only — developer-facing refactors belong in the commit log, not the changelog.
 5. Commit with a message like `Release v<version>`.
 6. Tag: `git tag v<version>` then `git push origin v<version>`. The tag version must match `plugin.info`.`version` exactly (no `v` prefix in `plugin.info`); the release workflow fails fast if they disagree.
-7. Watch the Release workflow complete. The GitHub Release page will have `revision-history.tid` attached and auto-generated notes from the commit log.
+7. Watch the Release workflow complete. The GitHub Release page will have `timelord.tid` attached and auto-generated notes from the commit log.
 
 ### Hotfixes
 
@@ -143,4 +143,4 @@ For an urgent fix on top of a shipped release, branch from the tag, apply the fi
 
 1. `npm test` — must pass.
 2. `npm run build-plugin`.
-3. Upload `build/revision-history.tid` to a manually-created GitHub Release.
+3. Upload `build/timelord.tid` to a manually-created GitHub Release.

@@ -17,11 +17,11 @@ Registered in `listener.js:26`. Signature: `(newTiddler, draft) → newTiddler`.
 Guards in order (any `return newTiddler` short-circuits without writing a revision):
 
 1. `draft` is falsy — old TW version, cannot detect renames; skip.
-2. `$:/config/mblackman/revision-history/enabled` is not `"yes"`.
+2. `$:/config/mblackman/timelord/enabled` is not `"yes"`.
 3. `draft.of` is empty — new tiddler, nothing to compare against.
 4. `$tw.wiki.getTiddler(oldTitle)` returns nothing — no pre-save state to save.
 5. Either `oldTitle` or `newTitle` is a system or shadow tiddler.
-6. `newTitle` matches `$:/config/mblackman/revision-history/exclude-filter`.
+6. `newTitle` matches `$:/config/mblackman/timelord/exclude-filter`.
 
 Behavior when not short-circuited:
 
@@ -57,9 +57,9 @@ Used by the Restore button in the Deleted Tiddlers sidebar.
 
 ### `tm-verify-revision-chains`
 
-No payload. Scans every revision chain in the wiki via `revisor.verifyAllChains()` and writes a human-readable report to `$:/temp/mblackman/revision-history/verify-report`. The report tiddler also carries numeric summary fields (`total-chains`, `broken-chains`, `total-revisions`, `broken-revisions`) so downstream UI can render badges without parsing the text.
+No payload. Scans every revision chain in the wiki via `revisor.verifyAllChains()` and writes a human-readable report to `$:/temp/mblackman/timelord/verify-report`. The report tiddler also carries numeric summary fields (`total-chains`, `broken-chains`, `total-revisions`, `broken-revisions`) so downstream UI can render badges without parsing the text.
 
-Used by the "Verify revision history" button in the Settings tab.
+Used by the "Verify timelord" button in the Settings tab.
 
 ### `tm-repair-revision-chains`
 
@@ -109,9 +109,9 @@ Used by the field-changes UI to render `old → new` inline comparisons and the 
 
 | Title | Default | Purpose |
 |-------|---------|---------|
-| `$:/config/mblackman/revision-history/enabled` | `"yes"` | Master on/off. Checked on every save and delete. Also temporarily flipped by `restoreFromRevision` so the restore doesn't create a spurious revision. |
-| `$:/config/mblackman/revision-history/exclude-filter` | `""` | Any filter expression. Tiddlers matching are skipped on save and delete. |
-| `$:/config/mblackman/revision-history/diff-size-limit` | `"102400"` | Maximum reconstructed text length (characters) before the diff view in `Revisions.tid` falls back to raw text. Prevents UI lag on pathologically large tiddlers. |
+| `$:/config/mblackman/timelord/enabled` | `"yes"` | Master on/off. Checked on every save and delete. Also temporarily flipped by `restoreFromRevision` so the restore doesn't create a spurious revision. |
+| `$:/config/mblackman/timelord/exclude-filter` | `""` | Any filter expression. Tiddlers matching are skipped on save and delete. |
+| `$:/config/mblackman/timelord/diff-size-limit` | `"102400"` | Maximum reconstructed text length (characters) before the diff view in `Revisions.tid` falls back to raw text. Prevents UI lag on pathologically large tiddlers. |
 
 All three are wired to visible controls in `Settings.tid` (a `$:/tags/ControlPanel/SettingsTab` tab).
 
@@ -131,9 +131,9 @@ The `Revisions.tid` entry template is factored into a `\define entry-template()`
 
 These are scratch tiddlers the UI writes to drive its own reveal/expand state. Nothing persists that isn't already user-visible state.
 
-- `$:/state/revision-history/restore-confirm` — holds the revision title currently awaiting restore confirmation.
-- `$:/state/revision-history/diff-current/<revisionTitle>` — `"open"` when the diff-vs-current section is expanded.
-- `$:/state/revision-history/diff-prev/<revisionTitle>` — `"open"` when the diff-vs-previous section is expanded.
-- `$:/state/revision-history/field-changes/<revisionTitle>` — `"open"` when the per-field changes are expanded.
-- `$:/state/revision-history/show-all/<parentTitle>` — `"all"` when pagination is expanded.
-- `$:/state/revision-history/sort/<parentTitle>` — `"asc"` for oldest-first sorting; empty for newest-first.
+- `$:/state/timelord/restore-confirm` — holds the revision title currently awaiting restore confirmation.
+- `$:/state/timelord/diff-current/<revisionTitle>` — `"open"` when the diff-vs-current section is expanded.
+- `$:/state/timelord/diff-prev/<revisionTitle>` — `"open"` when the diff-vs-previous section is expanded.
+- `$:/state/timelord/field-changes/<revisionTitle>` — `"open"` when the per-field changes are expanded.
+- `$:/state/timelord/show-all/<parentTitle>` — `"all"` when pagination is expanded.
+- `$:/state/timelord/sort/<parentTitle>` — `"asc"` for oldest-first sorting; empty for newest-first.

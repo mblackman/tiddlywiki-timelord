@@ -1,8 +1,8 @@
-# Revision History for TiddlyWiki (mblackman fork)
+# Timelord for TiddlyWiki
 
 A personal fork of [Ashlin Duncan's tiddlywiki-revision-history](https://github.com/AshlinDuncan/tiddlywiki-revision-history), featuring significant improvements to the interface, storage mechanisms, and core TiddlyWiki integration.
 
-[Demo](https://mblackman.github.io/tiddlywiki-revision-history/)
+[Demo](https://mblackman.github.io/tiddlywiki-timelord/)
 
 ## Features
 
@@ -17,7 +17,7 @@ A personal fork of [Ashlin Duncan's tiddlywiki-revision-history](https://github.
 
 ```bash
 npm install
-npm run build-plugin   # outputs build/revision-history.tid
+npm run build-plugin   # outputs build/timelord.tid
 npm run build-all      # also builds the demo wiki to build/index.html
 ```
 
@@ -47,11 +47,11 @@ Tests use Jest with a mock TiddlyWiki runtime. Coverage targets ~90% for core co
 
 ## Installation
 
-Install it from the [Demo](https://mblackman.github.io/tiddlywiki-revision-history/) page by dragging and dropping the plugin.
+Install it from the [Demo](https://mblackman.github.io/tiddlywiki-timelord/) page by dragging and dropping the plugin.
 
 Or if you are testing locally:
 
-Import `build/revision-history.tid` into your TiddlyWiki by drag-and-drop or the standard import dialog.
+Import `build/timelord.tid` into your TiddlyWiki by drag-and-drop or the standard import dialog.
 
 ## Requirements
 

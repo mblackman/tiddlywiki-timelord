@@ -4,7 +4,7 @@ Revision tiddlers are user data. They live in the wiki forever and must stay rea
 
 ## `SCHEMA_VERSION`
 
-Defined in [`revisor.js`](../plugins/mblackman/revision-history/src/revisor.js):
+Defined in [`revisor.js`](../plugins/mblackman/timelord/src/revisor.js):
 
 ```js
 export const SCHEMA_VERSION = "1";
@@ -12,7 +12,7 @@ export const SCHEMA_VERSION = "1";
 
 Every revision written by `addToHistory` is stamped with `revision-version: SCHEMA_VERSION`. The helper `getRevisionVersion(revision)` returns the field value or `"0"` if the field is missing.
 
-- `"0"` — pre-versioning. Produced by any plugin build before this field was introduced, and by all revisions written by the upstream `ashlin/revision-history` plugin. Readers must be prepared for the whole list of fields documented in [data-model.md](data-model.md) to be partially missing; in particular, `revision-data`, `revision-content-hash`, `revision-changed-fields`, `revision-number`, `revision-renamed-from`/`-to`, and the `"delta"` storage mode may all be absent.
+- `"0"` — pre-versioning. Produced by any plugin build before this field was introduced, and by all revisions written by the upstream `ashlin/timelord` plugin. Readers must be prepared for the whole list of fields documented in [data-model.md](data-model.md) to be partially missing; in particular, `revision-data`, `revision-content-hash`, `revision-changed-fields`, `revision-number`, `revision-renamed-from`/`-to`, and the `"delta"` storage mode may all be absent.
 - `"1"` — current format. All documented fields are present; `revision-storage` may be `"full"` or `"delta"`; legacy `"diff"` may appear on revisions migrated in.
 
 ## When to bump
@@ -66,7 +66,7 @@ Instead, readers tolerate older formats. The dedup path already demonstrates the
 
 | Version | Introduced in | What changed |
 |---------|---------------|--------------|
-| `"0"`   | pre-fork (upstream `ashlin/revision-history`) | Original format. No `revision-data`, no hashes, no delta storage; revision tiddlers held fields directly; no rename markers; no change-fields metadata. |
+| `"0"`   | pre-fork (upstream `ashlin/timelord`) | Original format. No `revision-data`, no hashes, no delta storage; revision tiddlers held fields directly; no rename markers; no change-fields metadata. |
 | `"1"`   | Phase 10 | All fields serialized into `revision-data`; three-mode storage (`full`/`diff`/`delta`); content hash for dedup; `revision-number`, `revision-changed-fields`, `revision-renamed-from`/`-to`; `revision-version` itself. |
 
 When the next bump lands, add a row here describing the diff from `"1"`.

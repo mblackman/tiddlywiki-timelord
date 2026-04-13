@@ -27,7 +27,7 @@ export function startup() {
 		if (!draft) return newTiddler; // Guard for TW < 5.3.x
 
 		// Respect the global pause toggle
-		const enabled = $tw.wiki.getTiddlerText("$:/config/mblackman/revision-history/enabled", "yes");
+		const enabled = $tw.wiki.getTiddlerText("$:/config/mblackman/timelord/enabled", "yes");
 		if (enabled !== "yes") return newTiddler;
 
 		// Not overwriting anything; no revision necessary!
@@ -44,7 +44,7 @@ export function startup() {
 		if ($tw.wiki.isShadowTiddler(oldTitle)) return newTiddler;
 
 		// Per-tiddler exclusion filter
-		const excludeFilter = $tw.wiki.getTiddlerText("$:/config/mblackman/revision-history/exclude-filter", "");
+		const excludeFilter = $tw.wiki.getTiddlerText("$:/config/mblackman/timelord/exclude-filter", "");
 		if (excludeFilter && excludeFilter.trim()) {
 			const excluded = $tw.wiki.filterTiddlers(excludeFilter);
 			if (excluded.indexOf(newTitle) !== -1) return newTiddler;
@@ -113,7 +113,7 @@ export function startup() {
 			}
 		}
 		$tw.wiki.addTiddler(new $tw.Tiddler({
-			title: "$:/temp/mblackman/revision-history/verify-report",
+			title: "$:/temp/mblackman/timelord/verify-report",
 			text: lines.join("\n"),
 			"scan-time": String(Date.now()),
 			"broken-chains": String(s.brokenChains),
@@ -126,7 +126,7 @@ export function startup() {
 	$tw.rootWidget.addEventListener("tm-compute-revision-stats", function() {
 		const stats = revisor.getStats(10);
 		const report = {
-			title: "$:/temp/mblackman/revision-history/stats",
+			title: "$:/temp/mblackman/timelord/stats",
 			text: "Computed at " + new Date().toISOString(),
 			"total-revisions": String(stats.totalRevisions),
 			"total-bytes": String(stats.totalBytes),
@@ -138,7 +138,7 @@ export function startup() {
 
 		// Write one small tiddler per top entry so the UI can list them with filters
 		// without needing a JSON parser. Clear any prior top-N tiddlers first.
-		const prefix = "$:/temp/mblackman/revision-history/stats/top/";
+		const prefix = "$:/temp/mblackman/timelord/stats/top/";
 		const stale = [];
 		if ($tw.wiki.each) {
 			$tw.wiki.each(function(_t, title) {
@@ -159,7 +159,7 @@ export function startup() {
 		});
 	});
 
-	$tw.rootWidget.addEventListener("tm-delete-revision-history", function(event) {
+	$tw.rootWidget.addEventListener("tm-delete-timelord", function(event) {
 		const tiddlerName = event.paramObject && event.paramObject.tiddlerName;
 		if (!tiddlerName) return;
 		revisor.removeHistory(tiddlerName);
@@ -170,7 +170,7 @@ export function startup() {
 		if (!filter || !filter.trim()) return;
 		const result = revisor.removeHistoryMatchingFilter(filter);
 		$tw.wiki.addTiddler(new $tw.Tiddler({
-			title: "$:/temp/mblackman/revision-history/prune-report",
+			title: "$:/temp/mblackman/timelord/prune-report",
 			text: "Removed history for " + result.deletedChains + " tiddler(s); "
 				+ result.deletedRevisions + " revision(s) deleted.",
 			"deleted-chains": String(result.deletedChains),
@@ -188,7 +188,7 @@ export function startup() {
 			"Marked " + s.totalMarked + " broken revision(s). Promoted " + s.totalPromoted + " revision(s) to full snapshots.",
 		];
 		$tw.wiki.addTiddler(new $tw.Tiddler({
-			title: "$:/temp/mblackman/revision-history/verify-report",
+			title: "$:/temp/mblackman/timelord/verify-report",
 			text: lines.join("\n"),
 			"repair-time": String(Date.now()),
 			"chains-repaired": String(s.chainsRepaired),
@@ -202,14 +202,14 @@ export function startup() {
 		const title = tiddler.fields.title;
 
 		// Respect the global pause toggle
-		const enabled = $tw.wiki.getTiddlerText("$:/config/mblackman/revision-history/enabled", "yes");
+		const enabled = $tw.wiki.getTiddlerText("$:/config/mblackman/timelord/enabled", "yes");
 		if (enabled !== "yes") return tiddler;
 
 		if ($tw.wiki.isSystemTiddler(title)) return tiddler;
 		if ($tw.wiki.isShadowTiddler(title)) return tiddler;
 
 		// Per-tiddler exclusion filter
-		const excludeFilter = $tw.wiki.getTiddlerText("$:/config/mblackman/revision-history/exclude-filter", "");
+		const excludeFilter = $tw.wiki.getTiddlerText("$:/config/mblackman/timelord/exclude-filter", "");
 		if (excludeFilter && excludeFilter.trim()) {
 			const excluded = $tw.wiki.filterTiddlers(excludeFilter);
 			if (excluded.indexOf(title) !== -1) return tiddler;

@@ -1,4 +1,4 @@
-! Revision History — Help
+! Timelord — Help
 
 This plugin automatically records a revision every time you save a tiddler, and keeps it until you choose to prune it. No retention limit — storage is bounded only by the content you edit.
 
@@ -10,7 +10,7 @@ This plugin automatically records a revision every time you save a tiddler, and 
 
 Revisions do ''not'' include system (`$:/`) or shadow tiddlers.
 
-!! Reading revision history
+!! Reading timelord
 
 Open any tiddler and expand the info panel (the ''i'' icon) — the ''Revisions'' tab lists every saved version, newest first.
 
@@ -25,7 +25,7 @@ Long lists paginate at 20 entries with a ''Show all'' toggle; ''Oldest first'' r
 
 !! Pausing capture
 
-Use the ''Revision History Settings'' tab in the [[Control Panel|$:/ControlPanel]] to:
+Use the ''Timelord Settings'' tab in the [[Control Panel|$:/ControlPanel]] to:
 
 * ''Disable tracking'' globally — e.g. before a bulk import, then re-enable afterwards.
 * Set an ''Exclusion Filter'' to skip specific tiddlers permanently (e.g. ''`[tag[NoTrack]]`'' skips everything tagged ''NoTrack'').
@@ -37,17 +37,17 @@ Saves that happen while tracking is paused or that match the exclude filter crea
 Infinite retention is the default. When you need to reclaim space or drop history intentionally:
 
 * ''Per tiddler.'' In the Revisions tab, the ''Delete all history'' button removes every revision for the current tiddler (keeps the live tiddler). Useful if a tiddler accumulated unwanted history before you set an exclude filter.
-* ''By filter.'' In the ''Revision History Stats'' tab, the ''Delete history matching filter'' action prunes history for every tiddler a filter matches. Useful for reclaiming storage across many tiddlers at once — confirmation is required because the blast radius is larger.
+* ''By filter.'' In the ''Timelord Stats'' tab, the ''Delete history matching filter'' action prunes history for every tiddler a filter matches. Useful for reclaiming storage across many tiddlers at once — confirmation is required because the blast radius is larger.
 
 Deletion only removes revision tiddlers. The live tiddler is unaffected.
 
 !! Storage and integrity
 
-* The ''Revision History Stats'' tab shows total revisions, approximate storage, tiddlers with the most revisions, and any revisions flagged as broken.
+* The ''Timelord Stats'' tab shows total revisions, approximate storage, tiddlers with the most revisions, and any revisions flagged as broken.
 * Revisions are stored as a mix of full snapshots and compact per-field deltas. A full snapshot is anchored every 10 revisions, so no chain ever grows unbounded between anchors.
-* Under normal use, chains stay consistent. If sync conflicts or external edits damage them, the ''Revision History Settings'' tab has ''Verify'' and ''Repair'' actions that detect and isolate broken revisions.
+* Under normal use, chains stay consistent. If sync conflicts or external edits damage them, the ''Timelord Settings'' tab has ''Verify'' and ''Repair'' actions that detect and isolate broken revisions.
 
 !! More
 
 * Developer documentation is in the repository's ''docs/'' folder.
-* Source and issues: [[mblackman/tiddlywiki-revision-history|https://github.com/mblackman/tiddlywiki-revision-history]].
+* Source and issues: [[mblackman/tiddlywiki-timelord|https://github.com/mblackman/tiddlywiki-timelord]].

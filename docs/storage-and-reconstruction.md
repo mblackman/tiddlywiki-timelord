@@ -28,10 +28,10 @@ The plugin stores revisions in one of three modes, indicated by the `revision-st
 
 ## When `full` vs `delta` is chosen
 
-Defined in [`Revisor.addToHistory`](../plugins/mblackman/revision-history/src/revisor.js). Decision order:
+Defined in [`Revisor.addToHistory`](../plugins/mblackman/timelord/src/revisor.js). Decision order:
 
 1. If there is no previous revision, write `"full"`.
-2. If [`_shouldStoreSnapshot(history)`](../plugins/mblackman/revision-history/src/revisor.js) returns `true` — i.e. there have been `SNAPSHOT_INTERVAL - 1 = 9` consecutive non-snapshot revisions since the last full snapshot — write `"full"`.
+2. If [`_shouldStoreSnapshot(history)`](../plugins/mblackman/timelord/src/revisor.js) returns `true` — i.e. there have been `SNAPSHOT_INTERVAL - 1 = 9` consecutive non-snapshot revisions since the last full snapshot — write `"full"`.
 3. Otherwise, compute the delta. If `text` changed and `dmp.patch_toText(...)` is shorter than the new text, store `"delta"` with the patch. If the patch is not shorter, fall back to `"full"` for this revision.
 
 This guarantees that any chain of `"delta"` revisions is bounded in length (≤ 9) before a fresh `"full"` anchors it, which bounds reconstruction cost.
@@ -78,7 +78,7 @@ Two entry points, both on `Revisor`:
 
 ### Old-format fallback
 
-Revisions that pre-date the `revision-data` field (very old installations, or revisions imported from the upstream `ashlin/revision-history` plugin) have their fields stored directly on the revision tiddler. `reconstructAllFields` detects the absence of `revision-data` and returns the tiddler's own fields verbatim.
+Revisions that pre-date the `revision-data` field (very old installations, or revisions imported from the upstream `ashlin/timelord` plugin) have their fields stored directly on the revision tiddler. `reconstructAllFields` detects the absence of `revision-data` and returns the tiddler's own fields verbatim.
 
 ## Worked example
 
@@ -99,7 +99,7 @@ To read revision `#12`'s text: walk back to `#10` (the anchor), then apply patch
 
 ## Hashing
 
-The plugin uses **djb2** for every hash on revisions. It is not cryptographic — it is used only to cheaply detect identical content. See `hashName` at the bottom of [`revisor.js`](../plugins/mblackman/revision-history/src/revisor.js). The output is 8 lowercase hex characters.
+The plugin uses **djb2** for every hash on revisions. It is not cryptographic — it is used only to cheaply detect identical content. See `hashName` at the bottom of [`revisor.js`](../plugins/mblackman/timelord/src/revisor.js). The output is 8 lowercase hex characters.
 
 Three distinct hashes exist:
 

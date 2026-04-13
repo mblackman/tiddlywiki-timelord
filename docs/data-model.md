@@ -5,15 +5,15 @@ Every historical state of a user tiddler is represented by a single **revision t
 ## Naming scheme
 
 ```
-Title:  $:/plugins/mblackman/revision-history/revisions/<hash>/<timestamp-ms>-<id>
-Tag:    $:/plugins/mblackman/revision-history/revisions/<hash>
+Title:  $:/plugins/mblackman/timelord/revisions/<hash>/<timestamp-ms>-<id>
+Tag:    $:/plugins/mblackman/timelord/revisions/<hash>
 ```
 
 - `<hash>` — djb2 hex hash (8 lowercase chars) of the **original tiddler name**. Stable across edits; changes only when the tiddler is renamed (at which point `renameHistory` retags all existing revisions).
 - `<timestamp-ms>` — `Date.now()` at the moment of capture.
 - `<id>` — a small integer (usually `0`) used purely for collision avoidance when two revisions are captured in the same millisecond. It is **not** a revision number.
 
-See [`revisor.js` `generateTitle` / `generateTag`](../plugins/mblackman/revision-history/src/revisor.js) for the exact logic.
+See [`revisor.js` `generateTitle` / `generateTag`](../plugins/mblackman/timelord/src/revisor.js) for the exact logic.
 
 ### Why hash the name and not embed it?
 
@@ -25,7 +25,7 @@ Tiddler names can contain any Unicode character, including `/`, `|`, and newline
 
 ## Field reference
 
-Each revision tiddler carries the following fields. The source of truth is the comment block at the top of [`revisor.js`](../plugins/mblackman/revision-history/src/revisor.js).
+Each revision tiddler carries the following fields. The source of truth is the comment block at the top of [`revisor.js`](../plugins/mblackman/timelord/src/revisor.js).
 
 | Field | Value | Purpose |
 |-------|-------|---------|
@@ -57,7 +57,7 @@ const AUTO_FIELDS = new Set([
 ]);
 ```
 
-Defined in [`revisor.js`](../plugins/mblackman/revision-history/src/revisor.js) (used by `serializeContentFields` / `_getChangedFieldNames`), [`listener.js`](../plugins/mblackman/revision-history/src/listener.js) (used by `tiddlerFieldsChanged`), and [`filters.js`](../plugins/mblackman/revision-history/src/filters.js) (used by the on-the-fly fallback of `revisionchangedfields`).
+Defined in [`revisor.js`](../plugins/mblackman/timelord/src/revisor.js) (used by `serializeContentFields` / `_getChangedFieldNames`), [`listener.js`](../plugins/mblackman/timelord/src/listener.js) (used by `tiddlerFieldsChanged`), and [`filters.js`](../plugins/mblackman/timelord/src/filters.js) (used by the on-the-fly fallback of `revisionchangedfields`).
 
 A save that only touches auto-fields produces **no** revision. Content-hash dedup uses the same list, so a restored tiddler will match its source revision even though `modified`/`revision-tag` differ.
 

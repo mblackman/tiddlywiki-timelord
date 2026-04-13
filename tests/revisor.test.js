@@ -1,5 +1,5 @@
 const { resetTw } = require('./mock-tw');
-const { Revisor, generateTitle, generateTag, escapeRegExp, hashName, SCHEMA_VERSION, getRevisionVersion } = require('../plugins/mblackman/revision-history/src/revisor');
+const { Revisor, generateTitle, generateTag, escapeRegExp, hashName, SCHEMA_VERSION, getRevisionVersion } = require('../plugins/mblackman/timelord/src/revisor');
 const DMP = require('diff-match-patch');
 
 beforeEach(() => {
@@ -28,7 +28,7 @@ describe('generateTag', () => {
   });
 
   it('starts with the plugin base path', () => {
-    expect(generateTag('Anything')).toMatch(/^\$:\/plugins\/mblackman\/revision-history\/revisions\//);
+    expect(generateTag('Anything')).toMatch(/^\$:\/plugins\/mblackman\/timelord\/revisions\//);
   });
 });
 
@@ -2046,7 +2046,7 @@ describe('verifyChain — broken status variants', () => {
   it('flags "snapshot unreachable" when a later diff has no preceding full snapshot', () => {
     const tag = generateTag('Doc');
     $tw.wiki.addTiddler(new $tw.Tiddler({
-      title: '$:/plugins/mblackman/revision-history/revisions/ddd/1000-0',
+      title: '$:/plugins/mblackman/timelord/revisions/ddd/1000-0',
       tags: '[[' + tag + ']]',
       'revision-of': 'Doc',
       'revision-date': 1000,
@@ -2062,7 +2062,7 @@ describe('verifyChain — broken status variants', () => {
   it('flags "delta parse failure" when revision-data is malformed', () => {
     const tag = generateTag('Doc');
     $tw.wiki.addTiddler(new $tw.Tiddler({
-      title: '$:/plugins/mblackman/revision-history/revisions/ddd/1000-0',
+      title: '$:/plugins/mblackman/timelord/revisions/ddd/1000-0',
       tags: '[[' + tag + ']]',
       'revision-of': 'Doc',
       'revision-date': 1000,
@@ -2070,7 +2070,7 @@ describe('verifyChain — broken status variants', () => {
       'revision-data': JSON.stringify({ text: 'base' }),
     }));
     $tw.wiki.addTiddler(new $tw.Tiddler({
-      title: '$:/plugins/mblackman/revision-history/revisions/ddd/2000-0',
+      title: '$:/plugins/mblackman/timelord/revisions/ddd/2000-0',
       tags: '[[' + tag + ']]',
       'revision-of': 'Doc',
       'revision-date': 2000,
@@ -2094,7 +2094,7 @@ describe('repairChain — promotion after a break', () => {
     // Two full snapshots. Poison the first one's hash to mark it broken; the second is
     // a fresh "full" after the break, so promotion should pick a diff/delta next.
     $tw.wiki.addTiddler(new $tw.Tiddler({
-      title: '$:/plugins/mblackman/revision-history/revisions/ppp/1000-0',
+      title: '$:/plugins/mblackman/timelord/revisions/ppp/1000-0',
       tags: '[[' + tag + ']]',
       'revision-of': 'Doc',
       'revision-date': 1000,
@@ -2103,7 +2103,7 @@ describe('repairChain — promotion after a break', () => {
       'revision-full-hash': 'deadbeef', // mismatch → broken
     }));
     $tw.wiki.addTiddler(new $tw.Tiddler({
-      title: '$:/plugins/mblackman/revision-history/revisions/ppp/2000-0',
+      title: '$:/plugins/mblackman/timelord/revisions/ppp/2000-0',
       tags: '[[' + tag + ']]',
       'revision-of': 'Doc',
       'revision-date': 2000,
@@ -2112,7 +2112,7 @@ describe('repairChain — promotion after a break', () => {
     }));
     const patch = dmp.patch_toText(dmp.patch_make('second', 'third'));
     $tw.wiki.addTiddler(new $tw.Tiddler({
-      title: '$:/plugins/mblackman/revision-history/revisions/ppp/3000-0',
+      title: '$:/plugins/mblackman/timelord/revisions/ppp/3000-0',
       tags: '[[' + tag + ']]',
       'revision-of': 'Doc',
       'revision-date': 3000,
@@ -2135,7 +2135,7 @@ describe('repairChain — promotion after a break', () => {
     // Sequence: full (broken) → delta (ok, reconstructable from the broken full) →
     // the promotion loop should promote the delta.
     $tw.wiki.addTiddler(new $tw.Tiddler({
-      title: '$:/plugins/mblackman/revision-history/revisions/qqq/1000-0',
+      title: '$:/plugins/mblackman/timelord/revisions/qqq/1000-0',
       tags: '[[' + tag + ']]',
       'revision-of': 'Doc',
       'revision-date': 1000,
@@ -2145,7 +2145,7 @@ describe('repairChain — promotion after a break', () => {
     }));
     const patch = dmp.patch_toText(dmp.patch_make('first', 'second'));
     $tw.wiki.addTiddler(new $tw.Tiddler({
-      title: '$:/plugins/mblackman/revision-history/revisions/qqq/2000-0',
+      title: '$:/plugins/mblackman/timelord/revisions/qqq/2000-0',
       tags: '[[' + tag + ']]',
       'revision-of': 'Doc',
       'revision-date': 2000,
@@ -2157,7 +2157,7 @@ describe('repairChain — promotion after a break', () => {
     expect(result.marked).toBeGreaterThanOrEqual(1);
     expect(result.promoted).toBe(1);
 
-    const promoted = $tw.wiki.getTiddler('$:/plugins/mblackman/revision-history/revisions/qqq/2000-0');
+    const promoted = $tw.wiki.getTiddler('$:/plugins/mblackman/timelord/revisions/qqq/2000-0');
     expect(promoted.getFieldString('revision-storage')).toBe('full');
   });
 });

@@ -40,6 +40,6 @@ jobs:
             - name: Upload plugin artifact
               uses: actions/upload-artifact@v4
               with:
-                  name: revision-history-plugin
-                  path: build/revision-history.tid
+                  name: timelord-plugin
+                  path: build/timelord.tid
                   if-no-files-found: error

@@ -1,6 +1,6 @@
 # Documentation
 
-Documentation for the `mblackman/revision-history` TiddlyWiki plugin.
+Documentation for the `mblackman/timelord` TiddlyWiki plugin.
 These docs assume familiarity with TiddlyWiki plugin authoring (tiddlers, filters, widgets, hooks).
 
 If you are a new user, see the top-level [README.md](../README.md) for install and usage.
@@ -18,7 +18,7 @@ If you are a new user, see the top-level [README.md](../README.md) for install a
 ## Quick map of the source tree
 
 ```
-plugins/mblackman/revision-history/
+plugins/mblackman/timelord/
   src/
     revisor.js       # core: add/restore/reconstruct revisions
     listener.js      # startup module; registers hooks and widget-message handlers

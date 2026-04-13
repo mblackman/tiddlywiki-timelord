@@ -9,7 +9,7 @@ const {
   generateTag,
   hashName,
   SCHEMA_VERSION,
-} = require('../plugins/mblackman/revision-history/src/revisor');
+} = require('../plugins/mblackman/timelord/src/revisor');
 const DMP = require('diff-match-patch');
 
 beforeEach(() => {
@@ -116,7 +116,7 @@ describe('Import: revisions for a tiddler that does not exist locally', () => {
   it('treats orphan revisions as a discoverable history (used by DeletedTiddlers)', () => {
     const revisor = new Revisor();
 
-    // Imported revision history for "Orphan" — no live tiddler exists
+    // Imported timelord for "Orphan" — no live tiddler exists
     const data = serialize({ text: 'only in history', tags: 'archived' });
     addRevision('Orphan', {
       title: 'orev',

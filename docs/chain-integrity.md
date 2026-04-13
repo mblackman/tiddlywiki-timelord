@@ -48,7 +48,7 @@ Repair never deletes revisions, never rewrites their `revision-data` in a lossy 
 
 Exposed to the UI as:
 
-- `tm-verify-revision-chains` — runs `verifyAllChains`, writes a human-readable report to `$:/temp/mblackman/revision-history/verify-report` with summary fields.
+- `tm-verify-revision-chains` — runs `verifyAllChains`, writes a human-readable report to `$:/temp/mblackman/timelord/verify-report` with summary fields.
 - `tm-repair-revision-chains` — runs `repairAllChains`, writes the summary to the same report tiddler.
 
 Both are wired to buttons in the Settings tab (`$:/tags/ControlPanel/SettingsTab`).

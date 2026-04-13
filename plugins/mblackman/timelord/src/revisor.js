@@ -1,7 +1,7 @@
 // Structure of revision tiddlers:
-// Title: $:/plugins/mblackman/revision-history/revisions/<hash>/<timestamp-ms>-<id>
+// Title: $:/plugins/mblackman/timelord/revisions/<hash>/<timestamp-ms>-<id>
 //   where <hash> is the djb2 hex hash of the tiddler name — stable across renames
-// Tag:   $:/plugins/mblackman/revision-history/revisions/<hash>
+// Tag:   $:/plugins/mblackman/timelord/revisions/<hash>
 // Fields:
 //   revision-of:            original tiddler name (the source of truth for lookup + restore)
 //   revision-date:          modified timestamp in ms (used for sorting)
@@ -22,7 +22,7 @@
 //   revision-broken-chain:  "yes" if chain-integrity check determined this revision is
 //                           unreconstructable (missing base, patch failure, or hash mismatch)
 
-const baseName = "$:/plugins/mblackman/revision-history/revisions/";
+const baseName = "$:/plugins/mblackman/timelord/revisions/";
 const SNAPSHOT_INTERVAL = 10;
 // Bump when the on-disk revision schema changes in a non-backward-compatible way.
 // Readers should treat missing revision-version as "0" (pre-versioning).
@@ -308,9 +308,9 @@ export class Revisor {
 		delete restoredFields["revision-renamed-from"];
 		delete restoredFields["revision-renamed-to"];
 
-		const wasEnabled = $tw.wiki.getTiddlerText("$:/config/mblackman/revision-history/enabled", "yes");
+		const wasEnabled = $tw.wiki.getTiddlerText("$:/config/mblackman/timelord/enabled", "yes");
 		if (wasEnabled === "yes") {
-			$tw.wiki.addTiddler(new $tw.Tiddler({ title: "$:/config/mblackman/revision-history/enabled", text: "no" }));
+			$tw.wiki.addTiddler(new $tw.Tiddler({ title: "$:/config/mblackman/timelord/enabled", text: "no" }));
 		}
 
 		if (targetTitle !== originalName) {
@@ -329,7 +329,7 @@ export class Revisor {
 		$tw.wiki.addTiddler(new $tw.Tiddler(restoredFields));
 
 		if (wasEnabled === "yes") {
-			$tw.wiki.addTiddler(new $tw.Tiddler({ title: "$:/config/mblackman/revision-history/enabled", text: "yes" }));
+			$tw.wiki.addTiddler(new $tw.Tiddler({ title: "$:/config/mblackman/timelord/enabled", text: "yes" }));
 		}
 
 		console.log("Restored:", revisionTitle, "→", targetTitle);
@@ -444,7 +444,7 @@ export class Revisor {
 		return revision.getFieldString("text");
 	}
 
-	// Removes all revision history for this tiddler
+	// Removes all timelord for this tiddler
 	removeHistory(name) {
 		if (!name.trim()) return;
 		for (let title of this.getHistory(name)) {
@@ -760,7 +760,7 @@ export class Revisor {
 		};
 	}
 
-	// Remove revision history for every tiddler name that the filter matches AND has a chain.
+	// Remove timelord for every tiddler name that the filter matches AND has a chain.
 	// Returns { deletedChains, deletedRevisions, names } where `names` is the list of
 	// tiddler names whose history was removed. An empty or whitespace-only filter is a no-op.
 	removeHistoryMatchingFilter(filter) {
