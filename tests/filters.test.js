@@ -195,4 +195,179 @@ describe('reconstructfield', () => {
     const results = reconstructfield(makeSource('rev1'), { operand: 'custom' }, {});
     expect(results).toEqual(['old value']);
   });
+
+  it('returns empty string when the requested field is missing from the reconstructed revision', () => {
+    const tag = generateTag('T');
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: 'rev1',
+      tags: '[[' + tag + ']]',
+      'revision-of': 'T',
+      'revision-date': 1000,
+      'revision-storage': 'full',
+      'revision-data': JSON.stringify({ text: 'no-custom-here' }),
+    }));
+
+    const results = reconstructfield(makeSource('rev1'), { operand: 'absent' }, {});
+    expect(results).toEqual(['']);
+  });
+
+  it('returns empty string when non-revision tiddler has no such field', () => {
+    $tw.wiki.addTiddler(new $tw.Tiddler({ title: 'Plain', text: 'body' }));
+    const results = reconstructfield(makeSource('Plain'), { operand: 'absent' }, {});
+    expect(results).toEqual(['']);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Extra branch coverage for revisionchangedfields
+// ---------------------------------------------------------------------------
+
+describe('revisionchangedfields — branch coverage', () => {
+  it('skips auto-managed fields when computing on-the-fly', () => {
+    const tag = generateTag('T');
+
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: 'rev1',
+      tags: '[[' + tag + ']]',
+      'revision-of': 'T',
+      'revision-date': 1000,
+      'revision-storage': 'full',
+      'revision-data': JSON.stringify({ text: 'same', modifier: 'alice', modified: '1' }),
+    }));
+
+    // Second revision — only auto-fields differ; expect empty change list
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: 'rev2',
+      tags: '[[' + tag + ']]',
+      'revision-of': 'T',
+      'revision-date': 2000,
+      'revision-storage': 'full',
+      'revision-data': JSON.stringify({ text: 'same', modifier: 'bob', modified: '2' }),
+    }));
+
+    const results = revisionchangedfields(makeSource('rev2'), {}, {});
+    expect(results).toEqual([]);
+  });
+
+  it('detects a field added in the new revision (prev side absent, || "" branch)', () => {
+    const tag = generateTag('T');
+
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: 'rev1',
+      tags: '[[' + tag + ']]',
+      'revision-of': 'T',
+      'revision-date': 1000,
+      'revision-storage': 'full',
+      'revision-data': JSON.stringify({ text: 'same' }),
+    }));
+
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: 'rev2',
+      tags: '[[' + tag + ']]',
+      'revision-of': 'T',
+      'revision-date': 2000,
+      'revision-storage': 'full',
+      'revision-data': JSON.stringify({ text: 'same', added: 'new' }),
+    }));
+
+    const results = revisionchangedfields(makeSource('rev2'), {}, {});
+    expect(results).toEqual(['added']);
+  });
+
+  it('detects a field removed in the new revision (current side absent, || "" branch)', () => {
+    const tag = generateTag('T');
+
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: 'rev1',
+      tags: '[[' + tag + ']]',
+      'revision-of': 'T',
+      'revision-date': 1000,
+      'revision-storage': 'full',
+      'revision-data': JSON.stringify({ text: 'same', removed: 'bye' }),
+    }));
+
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: 'rev2',
+      tags: '[[' + tag + ']]',
+      'revision-of': 'T',
+      'revision-date': 2000,
+      'revision-storage': 'full',
+      'revision-data': JSON.stringify({ text: 'same' }),
+    }));
+
+    const results = revisionchangedfields(makeSource('rev2'), {}, {});
+    expect(results).toEqual(['removed']);
+  });
+
+  it('ignores sibling revisions that lack revision-date (sort fallback, both orderings)', () => {
+    const tag = generateTag('T');
+
+    // Mix dated and undated siblings so the sort comparator hits both "|| 0" branches
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: 'rev-nodate-1',
+      tags: '[[' + tag + ']]',
+      'revision-of': 'T',
+      'revision-storage': 'full',
+      'revision-data': JSON.stringify({ text: 'seed' }),
+    }));
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: 'rev-nodate-2',
+      tags: '[[' + tag + ']]',
+      'revision-of': 'T',
+      'revision-storage': 'full',
+      'revision-data': JSON.stringify({ text: 'seed2' }),
+    }));
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: 'rev-mid',
+      tags: '[[' + tag + ']]',
+      'revision-of': 'T',
+      'revision-date': 2000,
+      'revision-storage': 'full',
+      'revision-data': JSON.stringify({ text: 'mid' }),
+    }));
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: 'rev-later',
+      tags: '[[' + tag + ']]',
+      'revision-of': 'T',
+      'revision-date': 3000,
+      'revision-storage': 'full',
+      'revision-data': JSON.stringify({ text: 'changed' }),
+    }));
+
+    const results = revisionchangedfields(makeSource('rev-later'), {}, {});
+    expect(results).toContain('text');
+  });
+
+  it('ignores null-resolving revision tiddlers during computation', () => {
+    const tag = generateTag('T');
+
+    // Tag a title pointing to a missing tiddler by inserting then deleting
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: 'rev-ghost',
+      tags: '[[' + tag + ']]',
+      'revision-of': 'T',
+      'revision-date': 500,
+      'revision-storage': 'full',
+      'revision-data': JSON.stringify({ text: 'old' }),
+    }));
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: 'rev1',
+      tags: '[[' + tag + ']]',
+      'revision-of': 'T',
+      'revision-date': 1000,
+      'revision-storage': 'full',
+      'revision-data': JSON.stringify({ text: 'mid' }),
+    }));
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: 'rev2',
+      tags: '[[' + tag + ']]',
+      'revision-of': 'T',
+      'revision-date': 2000,
+      'revision-storage': 'full',
+      'revision-data': JSON.stringify({ text: 'new' }),
+    }));
+
+    const results = revisionchangedfields(makeSource('rev2'), {}, {});
+    expect(results).toContain('text');
+  });
 });

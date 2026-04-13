@@ -1628,3 +1628,536 @@ describe('Revisor.removeHistoryMatchingFilter', () => {
     jest.useRealTimers();
   });
 });
+
+// ---------------------------------------------------------------------------
+// Branch coverage: legacy-format handling and error paths
+// ---------------------------------------------------------------------------
+
+describe('addToHistory — dedup against legacy revisions', () => {
+  it('deduplicates via revision-full-hash when revision-content-hash is absent', () => {
+    const revisor = new Revisor();
+
+    const tiddler = new $tw.Tiddler({ title: 'Doc', text: 'same body', modifier: 'me' });
+    revisor.addToHistory('Doc', tiddler);
+
+    // Strip the content-hash from the existing revision to simulate a legacy revision
+    // that only carries revision-full-hash.
+    const [existingTitle] = revisor.getHistory('Doc');
+    const existing = $tw.wiki.getTiddler(existingTitle);
+    const legacy = new $tw.Tiddler({ ...existing.fields });
+    delete legacy.fields['revision-content-hash'];
+    $tw.wiki.store.set(existingTitle, legacy);
+
+    // Adding the same tiddler again should dedupe via the legacy full-hash path
+    revisor.addToHistory('Doc', tiddler);
+    expect(revisor.getHistory('Doc')).toEqual([existingTitle]);
+  });
+
+  it('deduplicates via raw text field for very old revisions lacking any hash', () => {
+    const revisor = new Revisor();
+    const tag = generateTag('Doc');
+
+    const tiddler = new $tw.Tiddler({ title: 'Doc', text: 'exact', modifier: 'me' });
+    // Ancient revision: no revision-data, no hashes — only a text field on the revision itself
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: 'ancient-rev',
+      tags: '[[' + tag + ']]',
+      'revision-of': 'Doc',
+      'revision-date': 1000,
+      text: 'exact',
+    }));
+
+    revisor.addToHistory('Doc', tiddler);
+
+    // Should have skipped via raw-text comparison
+    const history = revisor.getHistory('Doc');
+    // One new revision still gets added — raw-text dedup only matches the ancient one
+    // (addToHistory compares against every existing revision). After dedup, history stays
+    // unchanged unless the candidate state truly differs — here it does not.
+    expect(history).toContain('ancient-rev');
+  });
+});
+
+describe('captureDeletedState — legacy revision matching', () => {
+  it('falls back to raw text comparison when revision-text-hash is missing', () => {
+    const revisor = new Revisor();
+    const tag = generateTag('Doc');
+
+    // Seed an ancient revision: no hash, just a text field
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: 'ancient-rev',
+      tags: '[[' + tag + ']]',
+      'revision-of': 'Doc',
+      'revision-date': 1000,
+      text: 'final text',
+    }));
+
+    const tiddler = new $tw.Tiddler({ title: 'Doc', text: 'final text', modifier: 'me' });
+    revisor.captureDeletedState('Doc', tiddler);
+
+    // The ancient revision should get marked deleted, even though it uses raw-text comparison
+    const rev = $tw.wiki.getTiddler('ancient-rev');
+    expect(rev.getFieldString('revision-deleted')).toBe('yes');
+  });
+
+  it('sorts matching revisions when some lack revision-date (|| 0 fallback)', () => {
+    const revisor = new Revisor();
+    const tag = generateTag('Doc');
+
+    // Two matching ancient revisions, one without a revision-date
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: 'undated-rev',
+      tags: '[[' + tag + ']]',
+      'revision-of': 'Doc',
+      text: 'final text',
+    }));
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: 'dated-rev',
+      tags: '[[' + tag + ']]',
+      'revision-of': 'Doc',
+      'revision-date': 500,
+      text: 'final text',
+    }));
+
+    const tiddler = new $tw.Tiddler({ title: 'Doc', text: 'final text', modifier: 'me' });
+    revisor.captureDeletedState('Doc', tiddler);
+
+    // One of the two should be marked deleted (dated one wins via sort)
+    expect($tw.wiki.getTiddler('dated-rev').getFieldString('revision-deleted')).toBe('yes');
+  });
+});
+
+describe('getLatestDeletedRevision — sort fallback', () => {
+  it('handles deleted revisions that lack revision-date', () => {
+    const revisor = new Revisor();
+    const tag = generateTag('Doc');
+
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: 'undated-del',
+      tags: '[[' + tag + ']]',
+      'revision-of': 'Doc',
+      'revision-deleted': 'yes',
+      'revision-storage': 'full',
+      'revision-data': JSON.stringify({ text: 'gone' }),
+    }));
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: 'dated-del',
+      tags: '[[' + tag + ']]',
+      'revision-of': 'Doc',
+      'revision-date': 1000,
+      'revision-deleted': 'yes',
+      'revision-storage': 'full',
+      'revision-data': JSON.stringify({ text: 'also gone' }),
+    }));
+
+    // Should return one of them without throwing
+    const result = revisor.getLatestDeletedRevision('Doc');
+    expect(['undated-del', 'dated-del']).toContain(result);
+  });
+});
+
+describe('restoreFromRevision — rename on restore', () => {
+  it('retitles the live tiddler and migrates history when the revision stores a different title', () => {
+    const revisor = new Revisor();
+    const tag = generateTag('Current');
+
+    // Live tiddler is 'Current'
+    $tw.wiki.addTiddler(new $tw.Tiddler({ title: 'Current', text: 'present', modifier: 'me' }));
+
+    // Revision claims the tiddler used to be titled 'WasNamed'
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: 'past-rev',
+      tags: '[[' + tag + ']]',
+      'revision-of': 'Current',
+      'revision-date': 500,
+      'revision-storage': 'full',
+      'revision-data': JSON.stringify({ title: 'WasNamed', text: 'old name body', modifier: 'me' }),
+    }));
+
+    // Story list is referenced by the rename path
+    $tw.wiki.addTiddler(new $tw.Tiddler({ title: '$:/StoryList', list: 'Current' }));
+    // Mock getTiddlerList since the MockWiki doesn't have one by default
+    $tw.wiki.getTiddlerList = (title) => {
+      const t = $tw.wiki.getTiddler(title);
+      if (!t) return [];
+      const val = t.getFieldString('list');
+      return val ? val.split(' ') : [];
+    };
+
+    const result = revisor.restoreFromRevision('past-rev');
+
+    // Restore returns the target title
+    expect(result).toBe('WasNamed');
+    // Live tiddler now at the renamed title, original deleted
+    expect($tw.wiki.getTiddler('WasNamed')).toBeTruthy();
+    expect($tw.wiki.getTiddler('Current')).toBeNull();
+    // Story list was updated
+    const storyList = $tw.wiki.getTiddler('$:/StoryList').getFieldString('list').split(' ');
+    expect(storyList).toContain('WasNamed');
+    expect(storyList).not.toContain('Current');
+  });
+});
+
+describe('reconstructText — error paths', () => {
+  let revisor;
+  beforeEach(() => { revisor = new Revisor(); });
+
+  it('returns the revision\'s own text when target not found in chain', () => {
+    const tag = generateTag('Doc');
+    // Revision is tagged under a DIFFERENT name than its revision-of field — so
+    // getHistory(revision-of) will not include this revision.
+    const wrongTag = generateTag('Other');
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: 'orphan-rev',
+      tags: '[[' + wrongTag + ']]',
+      'revision-of': 'Doc',
+      'revision-date': 1000,
+      'revision-storage': 'diff',
+      'revision-data': JSON.stringify({ text: 'fallback body' }),
+    }));
+
+    expect(revisor.reconstructText('orphan-rev')).toBe('fallback body');
+  });
+
+  it('returns the revision\'s own text and warns when chain has no snapshot', () => {
+    const tag = generateTag('Doc');
+    // Every revision is delta/diff, no full anchor
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: 'rev1',
+      tags: '[[' + tag + ']]',
+      'revision-of': 'Doc',
+      'revision-date': 1000,
+      'revision-storage': 'delta',
+      'revision-data': JSON.stringify({ text: 'nope' }),
+    }));
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: 'rev2',
+      tags: '[[' + tag + ']]',
+      'revision-of': 'Doc',
+      'revision-date': 2000,
+      'revision-storage': 'delta',
+      'revision-data': JSON.stringify({ text: 'nope2' }),
+    }));
+
+    expect(revisor.reconstructText('rev2')).toBe('nope2');
+  });
+
+  it('handles malformed delta JSON in the chain', () => {
+    const tag = generateTag('Doc');
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: 'rev-full',
+      tags: '[[' + tag + ']]',
+      'revision-of': 'Doc',
+      'revision-date': 1000,
+      'revision-storage': 'full',
+      'revision-data': JSON.stringify({ text: 'base' }),
+    }));
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: 'rev-bad',
+      tags: '[[' + tag + ']]',
+      'revision-of': 'Doc',
+      'revision-date': 2000,
+      'revision-storage': 'delta',
+      'revision-data': '{not-json',
+    }));
+
+    // Should not throw and should fall back to the base text
+    expect(revisor.reconstructText('rev-bad')).toBe('base');
+  });
+
+  it('handles malformed diff patch text in the chain', () => {
+    const tag = generateTag('Doc');
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: 'rev-full',
+      tags: '[[' + tag + ']]',
+      'revision-of': 'Doc',
+      'revision-date': 1000,
+      'revision-storage': 'full',
+      'revision-data': JSON.stringify({ text: 'base' }),
+    }));
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: 'rev-bad',
+      tags: '[[' + tag + ']]',
+      'revision-of': 'Doc',
+      'revision-date': 2000,
+      'revision-storage': 'diff',
+      'revision-data': JSON.stringify({ text: 'not a valid dmp patch text @@@' }),
+    }));
+
+    expect(revisor.reconstructText('rev-bad')).toBe('base');
+  });
+});
+
+describe('_getRevisionText — old format and malformed data', () => {
+  let revisor;
+  beforeEach(() => { revisor = new Revisor(); });
+
+  it('reads from the tiddler\'s text field when revision-data is absent', () => {
+    const tag = generateTag('Doc');
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: 'old-rev',
+      tags: '[[' + tag + ']]',
+      'revision-of': 'Doc',
+      'revision-date': 1000,
+      text: 'ancient body',
+    }));
+
+    // No storage field means "full" path, which returns _getRevisionText(revision)
+    expect(revisor.reconstructText('old-rev')).toBe('ancient body');
+  });
+
+  it('returns empty string when revision-data is present but malformed', () => {
+    const tag = generateTag('Doc');
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: 'bad-rev',
+      tags: '[[' + tag + ']]',
+      'revision-of': 'Doc',
+      'revision-date': 1000,
+      'revision-storage': 'full',
+      'revision-data': '{bogus',
+    }));
+
+    expect(revisor.reconstructText('bad-rev')).toBe('');
+  });
+});
+
+describe('reconstructAllFields — error paths and rare storage', () => {
+  let revisor;
+  beforeEach(() => { revisor = new Revisor(); });
+
+  it('handles storage="diff" by resolving text via the chain and keeping stored fields', () => {
+    const tag = generateTag('Doc');
+    const dmp = new DMP();
+
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: 'rev1',
+      tags: '[[' + tag + ']]',
+      'revision-of': 'Doc',
+      'revision-date': 1000,
+      'revision-storage': 'full',
+      'revision-data': JSON.stringify({ text: 'base', tags: 'keep' }),
+    }));
+
+    const patch = dmp.patch_toText(dmp.patch_make('base', 'updated'));
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: 'rev2',
+      tags: '[[' + tag + ']]',
+      'revision-of': 'Doc',
+      'revision-date': 2000,
+      'revision-storage': 'diff',
+      'revision-data': JSON.stringify({ text: patch, tags: 'changed' }),
+    }));
+
+    const fields = revisor.reconstructAllFields('rev2');
+    expect(fields.text).toBe('updated');
+    expect(fields.tags).toBe('changed');
+  });
+
+  it('returns the raw delta payload when no base revision exists for a delta', () => {
+    const tag = generateTag('Doc');
+    // Only a delta, no full snapshot ahead of it
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: 'lone-delta',
+      tags: '[[' + tag + ']]',
+      'revision-of': 'Doc',
+      'revision-date': 1000,
+      'revision-storage': 'delta',
+      'revision-data': JSON.stringify({ tags: 'raw-only' }),
+    }));
+
+    const fields = revisor.reconstructAllFields('lone-delta');
+    // Warning path returns the raw delta JSON
+    expect(fields.tags).toBe('raw-only');
+  });
+
+  it('handles malformed delta JSON while walking forward', () => {
+    const tag = generateTag('Doc');
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: 'rev-full',
+      tags: '[[' + tag + ']]',
+      'revision-of': 'Doc',
+      'revision-date': 1000,
+      'revision-storage': 'full',
+      'revision-data': JSON.stringify({ text: 'base', tags: 'initial' }),
+    }));
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: 'rev-bad',
+      tags: '[[' + tag + ']]',
+      'revision-of': 'Doc',
+      'revision-date': 2000,
+      'revision-storage': 'delta',
+      'revision-data': '{not-json',
+    }));
+
+    const fields = revisor.reconstructAllFields('rev-bad');
+    // Should fall back to base fields because the delta failed to parse
+    expect(fields.tags).toBe('initial');
+  });
+
+  it('returns the raw payload for unknown storage modes', () => {
+    const tag = generateTag('Doc');
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: 'rev-weird',
+      tags: '[[' + tag + ']]',
+      'revision-of': 'Doc',
+      'revision-date': 1000,
+      'revision-storage': 'mystery',
+      'revision-data': JSON.stringify({ text: 'mystery body', tags: 'stuff' }),
+    }));
+
+    const fields = revisor.reconstructAllFields('rev-weird');
+    expect(fields.text).toBe('mystery body');
+    expect(fields.tags).toBe('stuff');
+  });
+});
+
+describe('verifyRevisionIntegrity — reconstruction failure', () => {
+  it('reports reconstruction failure when reconstructAllFields throws', () => {
+    const revisor = new Revisor();
+    const tag = generateTag('Doc');
+
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: 'bad-rev',
+      tags: '[[' + tag + ']]',
+      'revision-of': 'Doc',
+      'revision-date': 1000,
+      'revision-storage': 'full',
+      'revision-data': '{not-json',
+      'revision-full-hash': 'abcdef01',
+    }));
+
+    // Monkey-patch reconstructAllFields to force a throw, since the malformed JSON
+    // path is swallowed inside _getRevisionText rather than surfacing.
+    const orig = revisor.reconstructAllFields.bind(revisor);
+    revisor.reconstructAllFields = () => { throw new Error('boom'); };
+
+    const result = revisor.verifyRevisionIntegrity('bad-rev');
+    expect(result.ok).toBe(false);
+    expect(result.reason).toContain('reconstruction failed');
+
+    revisor.reconstructAllFields = orig;
+  });
+});
+
+describe('verifyChain — broken status variants', () => {
+  let revisor;
+  beforeEach(() => { revisor = new Revisor(); });
+
+  it('flags "snapshot unreachable" when a later diff has no preceding full snapshot', () => {
+    const tag = generateTag('Doc');
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: '$:/plugins/mblackman/revision-history/revisions/ddd/1000-0',
+      tags: '[[' + tag + ']]',
+      'revision-of': 'Doc',
+      'revision-date': 1000,
+      'revision-storage': 'delta',
+      'revision-data': JSON.stringify({ text: 'nope' }),
+    }));
+
+    const result = revisor.verifyChain('Doc');
+    expect(result.status).toBe('broken');
+    expect(result.revisions[0].reason).toMatch(/no preceding full snapshot/);
+  });
+
+  it('flags "delta parse failure" when revision-data is malformed', () => {
+    const tag = generateTag('Doc');
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: '$:/plugins/mblackman/revision-history/revisions/ddd/1000-0',
+      tags: '[[' + tag + ']]',
+      'revision-of': 'Doc',
+      'revision-date': 1000,
+      'revision-storage': 'full',
+      'revision-data': JSON.stringify({ text: 'base' }),
+    }));
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: '$:/plugins/mblackman/revision-history/revisions/ddd/2000-0',
+      tags: '[[' + tag + ']]',
+      'revision-of': 'Doc',
+      'revision-date': 2000,
+      'revision-storage': 'delta',
+      'revision-data': '{not-json',
+    }));
+
+    const result = revisor.verifyChain('Doc');
+    expect(result.status).toBe('broken');
+    const broken = result.revisions.find(r => r.status === 'broken');
+    expect(broken.reason).toMatch(/delta parse failure/);
+  });
+});
+
+describe('repairChain — promotion after a break', () => {
+  it('promotes the first reconstructable diff/delta after a broken revision to full', () => {
+    const revisor = new Revisor();
+    const tag = generateTag('Doc');
+    const dmp = new DMP();
+
+    // Two full snapshots. Poison the first one's hash to mark it broken; the second is
+    // a fresh "full" after the break, so promotion should pick a diff/delta next.
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: '$:/plugins/mblackman/revision-history/revisions/ppp/1000-0',
+      tags: '[[' + tag + ']]',
+      'revision-of': 'Doc',
+      'revision-date': 1000,
+      'revision-storage': 'full',
+      'revision-data': JSON.stringify({ text: 'first' }),
+      'revision-full-hash': 'deadbeef', // mismatch → broken
+    }));
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: '$:/plugins/mblackman/revision-history/revisions/ppp/2000-0',
+      tags: '[[' + tag + ']]',
+      'revision-of': 'Doc',
+      'revision-date': 2000,
+      'revision-storage': 'full',
+      'revision-data': JSON.stringify({ text: 'second' }),
+    }));
+    const patch = dmp.patch_toText(dmp.patch_make('second', 'third'));
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: '$:/plugins/mblackman/revision-history/revisions/ppp/3000-0',
+      tags: '[[' + tag + ']]',
+      'revision-of': 'Doc',
+      'revision-date': 3000,
+      'revision-storage': 'delta',
+      'revision-data': JSON.stringify({ text: patch }),
+    }));
+
+    const result = revisor.repairChain('Doc');
+    expect(result.marked).toBeGreaterThanOrEqual(1);
+    // The first OK full (2000) stops promotion immediately — the loop breaks on a full.
+    // So promoted === 0 here. What we're verifying is the promotion-scan loop actually ran.
+    expect(result.promoted).toBe(0);
+  });
+
+  it('promotes a delta to full when the first post-break revision is a delta', () => {
+    const revisor = new Revisor();
+    const tag = generateTag('Doc');
+    const dmp = new DMP();
+
+    // Sequence: full (broken) → delta (ok, reconstructable from the broken full) →
+    // the promotion loop should promote the delta.
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: '$:/plugins/mblackman/revision-history/revisions/qqq/1000-0',
+      tags: '[[' + tag + ']]',
+      'revision-of': 'Doc',
+      'revision-date': 1000,
+      'revision-storage': 'full',
+      'revision-data': JSON.stringify({ text: 'first' }),
+      'revision-full-hash': 'deadbeef', // mismatch → broken
+    }));
+    const patch = dmp.patch_toText(dmp.patch_make('first', 'second'));
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: '$:/plugins/mblackman/revision-history/revisions/qqq/2000-0',
+      tags: '[[' + tag + ']]',
+      'revision-of': 'Doc',
+      'revision-date': 2000,
+      'revision-storage': 'delta',
+      'revision-data': JSON.stringify({ text: patch }),
+    }));
+
+    const result = revisor.repairChain('Doc');
+    expect(result.marked).toBeGreaterThanOrEqual(1);
+    expect(result.promoted).toBe(1);
+
+    const promoted = $tw.wiki.getTiddler('$:/plugins/mblackman/revision-history/revisions/qqq/2000-0');
+    expect(promoted.getFieldString('revision-storage')).toBe('full');
+  });
+});

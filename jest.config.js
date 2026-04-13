@@ -9,7 +9,7 @@ module.exports = {
   },
   setupFiles: ['<rootDir>/tests/setup.js'],
   collectCoverageFrom: [
-    'plugins/revision-history/src/**/*.js',
+    'plugins/mblackman/revision-history/src/**/*.js',
   ],
   coverageDirectory: 'coverage',
 };

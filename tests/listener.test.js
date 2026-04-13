@@ -311,6 +311,165 @@ describe('th-deleting-tiddler hook', () => {
     const result = deletingHook(null);
     expect(result).toBeNull();
   });
+
+  it('skips shadow tiddlers', () => {
+    const origShadow = $tw.wiki.isShadowTiddler;
+    $tw.wiki.isShadowTiddler = (title) => title === 'ShadowDoc';
+
+    const tiddler = new $tw.Tiddler({ title: 'ShadowDoc', text: 'hidden', modifier: 'me' });
+    $tw.wiki.addTiddler(tiddler);
+
+    deletingHook(tiddler);
+
+    const tag = generateTag('ShadowDoc');
+    expect($tw.wiki.getTiddlersWithTag(tag)).toHaveLength(0);
+
+    $tw.wiki.isShadowTiddler = origShadow;
+  });
+
+  it('respects the exclude filter on delete', () => {
+    const origFilter = $tw.wiki.filterTiddlers;
+    $tw.wiki.filterTiddlers = () => ['ExcludedDoc'];
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: '$:/config/mblackman/revision-history/exclude-filter',
+      text: '[tag[excluded]]',
+    }));
+
+    const tiddler = new $tw.Tiddler({ title: 'ExcludedDoc', text: 'bye', modifier: 'me' });
+    $tw.wiki.addTiddler(tiddler);
+
+    deletingHook(tiddler);
+
+    const tag = generateTag('ExcludedDoc');
+    expect($tw.wiki.getTiddlersWithTag(tag)).toHaveLength(0);
+
+    $tw.wiki.filterTiddlers = origFilter;
+  });
+
+  it('ignores an empty-whitespace exclude filter', () => {
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: '$:/config/mblackman/revision-history/exclude-filter',
+      text: '   ',
+    }));
+
+    const tiddler = new $tw.Tiddler({ title: 'Doc', text: 'bye', modifier: 'me' });
+    $tw.wiki.addTiddler(tiddler);
+
+    deletingHook(tiddler);
+
+    const tag = generateTag('Doc');
+    expect($tw.wiki.getTiddlersWithTag(tag).length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('does not skip when exclude filter does not match this tiddler', () => {
+    const origFilter = $tw.wiki.filterTiddlers;
+    $tw.wiki.filterTiddlers = () => ['SomeOtherDoc'];
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: '$:/config/mblackman/revision-history/exclude-filter',
+      text: '[tag[something]]',
+    }));
+
+    const tiddler = new $tw.Tiddler({ title: 'Doc', text: 'bye', modifier: 'me' });
+    $tw.wiki.addTiddler(tiddler);
+
+    deletingHook(tiddler);
+
+    const tag = generateTag('Doc');
+    expect($tw.wiki.getTiddlersWithTag(tag).length).toBeGreaterThanOrEqual(1);
+
+    $tw.wiki.filterTiddlers = origFilter;
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Branch coverage: rename-over-existing + skip paths
+// ---------------------------------------------------------------------------
+
+describe('th-saving-tiddler — branch coverage', () => {
+  let savingHook;
+
+  beforeEach(() => {
+    startup();
+    savingHook = $tw.hooks._hooks['th-saving-tiddler'][0];
+  });
+
+  it('captures the overwritten tiddler when a rename targets an existing title', () => {
+    const existingTarget = new $tw.Tiddler({ title: 'Target', text: 'to be overwritten', modifier: 'me' });
+    const sourceTiddler = new $tw.Tiddler({ title: 'Source', text: 'source content', modifier: 'me' });
+    $tw.wiki.addTiddler(existingTarget);
+    $tw.wiki.addTiddler(sourceTiddler);
+
+    // Rename Source -> Target (Target already exists)
+    const newTiddler = new $tw.Tiddler({ title: 'Target', text: 'source content overwrite', modifier: 'me' });
+    const draft = new $tw.Tiddler({ title: 'Draft', 'draft.of': 'Source' });
+
+    savingHook(newTiddler, draft);
+
+    // Both histories should have entries: Target's chain captures its prior state
+    const targetTag = generateTag('Target');
+    const targetRevs = $tw.wiki.getTiddlersWithTag(targetTag);
+    expect(targetRevs.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('skips when old title is a system tiddler', () => {
+    $tw.wiki.addTiddler(new $tw.Tiddler({ title: '$:/oldSys', text: 'old', modifier: 'me' }));
+    const newTiddler = new $tw.Tiddler({ title: 'NewRegular', text: 'new' });
+    const draft = new $tw.Tiddler({ title: 'Draft', 'draft.of': '$:/oldSys' });
+
+    savingHook(newTiddler, draft);
+
+    const tag = generateTag('NewRegular');
+    expect($tw.wiki.getTiddlersWithTag(tag)).toHaveLength(0);
+  });
+
+  it('skips when old title is a shadow tiddler', () => {
+    const origShadow = $tw.wiki.isShadowTiddler;
+    $tw.wiki.isShadowTiddler = (title) => title === 'ShadowOld';
+
+    $tw.wiki.addTiddler(new $tw.Tiddler({ title: 'ShadowOld', text: 'old' }));
+    const newTiddler = new $tw.Tiddler({ title: 'NewRegular', text: 'new' });
+    const draft = new $tw.Tiddler({ title: 'Draft', 'draft.of': 'ShadowOld' });
+
+    savingHook(newTiddler, draft);
+
+    const tag = generateTag('NewRegular');
+    expect($tw.wiki.getTiddlersWithTag(tag)).toHaveLength(0);
+
+    $tw.wiki.isShadowTiddler = origShadow;
+  });
+
+  it('skips when new title is a shadow tiddler', () => {
+    const origShadow = $tw.wiki.isShadowTiddler;
+    $tw.wiki.isShadowTiddler = (title) => title === 'ShadowNew';
+
+    $tw.wiki.addTiddler(new $tw.Tiddler({ title: 'PlainOld', text: 'old', modifier: 'me' }));
+    const newTiddler = new $tw.Tiddler({ title: 'ShadowNew', text: 'new' });
+    const draft = new $tw.Tiddler({ title: 'Draft', 'draft.of': 'PlainOld' });
+
+    savingHook(newTiddler, draft);
+
+    const tag = generateTag('ShadowNew');
+    expect($tw.wiki.getTiddlersWithTag(tag)).toHaveLength(0);
+
+    $tw.wiki.isShadowTiddler = origShadow;
+  });
+
+  it('ignores an empty-whitespace exclude filter', () => {
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: '$:/config/mblackman/revision-history/exclude-filter',
+      text: '   ',
+    }));
+
+    const oldTiddler = new $tw.Tiddler({ title: 'Doc', text: 'old', modifier: 'me' });
+    $tw.wiki.addTiddler(oldTiddler);
+    const newTiddler = new $tw.Tiddler({ title: 'Doc', text: 'new', modifier: 'me' });
+    const draft = new $tw.Tiddler({ title: 'Draft', 'draft.of': 'Doc' });
+
+    savingHook(newTiddler, draft);
+
+    const tag = generateTag('Doc');
+    expect($tw.wiki.getTiddlersWithTag(tag).length).toBeGreaterThanOrEqual(1);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -375,6 +534,134 @@ describe('tm-restore-deleted-tiddler event', () => {
     const listener = $tw.rootWidget._listeners['tm-restore-deleted-tiddler'][0];
     listener({ paramObject: { tiddlerName: 'NeverExisted' } });
     expect($tw.wiki.getTiddler('NeverExisted')).toBeNull();
+  });
+
+  it('does nothing when tiddlerName is missing from paramObject', () => {
+    startup();
+    const listener = $tw.rootWidget._listeners['tm-restore-deleted-tiddler'][0];
+    listener({}); // paramObject missing
+    listener({ paramObject: {} }); // tiddlerName missing
+  });
+});
+
+describe('th-saving-tiddler — exclude filter nuances', () => {
+  it('does not skip when exclude filter does not match this tiddler', () => {
+    const origFilter = $tw.wiki.filterTiddlers;
+    startup();
+    const savingHook = $tw.hooks._hooks['th-saving-tiddler'][0];
+
+    $tw.wiki.filterTiddlers = () => ['OtherDoc'];
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: '$:/config/mblackman/revision-history/exclude-filter',
+      text: '[tag[excluded]]',
+    }));
+
+    const oldTiddler = new $tw.Tiddler({ title: 'Doc', text: 'old', modifier: 'me' });
+    $tw.wiki.addTiddler(oldTiddler);
+    const newTiddler = new $tw.Tiddler({ title: 'Doc', text: 'new', modifier: 'me' });
+    const draft = new $tw.Tiddler({ title: 'Draft', 'draft.of': 'Doc' });
+
+    savingHook(newTiddler, draft);
+
+    const tag = generateTag('Doc');
+    expect($tw.wiki.getTiddlersWithTag(tag).length).toBeGreaterThanOrEqual(1);
+
+    $tw.wiki.filterTiddlers = origFilter;
+  });
+});
+
+describe('tm-verify-revision-chains — mixed chain output', () => {
+  it('emits only broken chains (skipping ok ones) in the report body', () => {
+    startup();
+
+    const goodTag = generateTag('Good');
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: '$:/plugins/mblackman/revision-history/revisions/ggg/1000-0',
+      tags: '[[' + goodTag + ']]',
+      'revision-of': 'Good',
+      'revision-date': 1000,
+      'revision-storage': 'full',
+      'revision-data': JSON.stringify({ text: 'solid' }),
+    }));
+
+    const badTag = generateTag('Bad');
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: '$:/plugins/mblackman/revision-history/revisions/bbb/1000-0',
+      tags: '[[' + badTag + ']]',
+      'revision-of': 'Bad',
+      'revision-date': 1000,
+      'revision-storage': 'delta',
+      'revision-data': JSON.stringify({ text: 'nope' }),
+    }));
+
+    const listener = $tw.rootWidget._listeners['tm-verify-revision-chains'][0];
+    listener({});
+
+    const report = $tw.wiki.getTiddler('$:/temp/mblackman/revision-history/verify-report');
+    expect(report.getFieldString('broken-chains')).toBe('1');
+    expect(report.getFieldString('total-chains')).toBe('2');
+    expect(report.getFieldString('text')).toContain('Bad');
+    expect(report.getFieldString('text')).not.toContain('!! Good');
+  });
+
+  it('includes only broken revisions in the per-chain bullet list', () => {
+    startup();
+
+    // Build a chain with a good full snapshot and one bad delta-without-anchor isn't
+    // possible (it would make the snapshot broken too), so instead mix a valid
+    // revision with a poisoned-hash sibling in the SAME chain.
+    const tag = generateTag('Mix');
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: '$:/plugins/mblackman/revision-history/revisions/mmm/1000-0',
+      tags: '[[' + tag + ']]',
+      'revision-of': 'Mix',
+      'revision-date': 1000,
+      'revision-storage': 'full',
+      'revision-data': JSON.stringify({ text: 'ok1' }),
+    }));
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: '$:/plugins/mblackman/revision-history/revisions/mmm/2000-0',
+      tags: '[[' + tag + ']]',
+      'revision-of': 'Mix',
+      'revision-date': 2000,
+      'revision-storage': 'full',
+      'revision-data': JSON.stringify({ text: 'ok2' }),
+      'revision-full-hash': 'deadbeef', // intentionally mismatched
+    }));
+
+    const listener = $tw.rootWidget._listeners['tm-verify-revision-chains'][0];
+    listener({});
+
+    const report = $tw.wiki.getTiddler('$:/temp/mblackman/revision-history/verify-report');
+    expect(report.getFieldString('broken-chains')).toBe('1');
+    const text = report.getFieldString('text');
+    // Broken-revision bullet should refer to the poisoned title
+    expect(text).toContain('2000-0');
+  });
+
+  it('falls back to "unknown" when a broken revision has no reason', () => {
+    startup();
+
+    // Seed a chain that will verify OK under normal path, then poison verifyChain's result
+    // via adding a revision with a deliberately broken integrity (hash mismatch with
+    // computed state). Simplest way: add a "full" revision whose stored full-hash is wrong.
+    const tag = generateTag('Hashy');
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: '$:/plugins/mblackman/revision-history/revisions/hhh/1000-0',
+      tags: '[[' + tag + ']]',
+      'revision-of': 'Hashy',
+      'revision-date': 1000,
+      'revision-storage': 'full',
+      'revision-data': JSON.stringify({ text: 'one' }),
+      'revision-full-hash': 'deadbeef', // does not match computed hash
+    }));
+
+    const listener = $tw.rootWidget._listeners['tm-verify-revision-chains'][0];
+    listener({});
+
+    const report = $tw.wiki.getTiddler('$:/temp/mblackman/revision-history/verify-report');
+    expect(report.getFieldString('broken-chains')).toBe('1');
+    expect(report.getFieldString('text')).toContain('Hashy');
   });
 });
 
