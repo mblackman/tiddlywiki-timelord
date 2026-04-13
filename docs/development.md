@@ -107,9 +107,9 @@ The mock `$tw` is intentionally minimal — add methods to it only when a test n
 
 ## Continuous integration
 
-[`.github/workflows/ci.yml`](../.github/workflows/ci.yml) runs on every push to `master` and every pull request. It installs dependencies with `npm ci`, runs `npm test`, then `npm run build-all`, and uploads `build/timelord.tid` as a workflow artifact. PRs that break tests or the build are blocked from merging.
+[`.github/workflows/ci.yml`](../.github/workflows/ci.yml) runs on every push to `main` and every pull request. It installs dependencies with `npm ci`, runs `npm test`, then `npm run build-all`, and uploads `build/timelord.tid` as a workflow artifact. PRs that break tests or the build are blocked from merging.
 
-[`.github/workflows/gh-pages.yml`](../.github/workflows/gh-pages.yml) rebuilds the demo site from `master` and publishes it to GitHub Pages.
+[`.github/workflows/gh-pages.yml`](../.github/workflows/gh-pages.yml) rebuilds the demo site from `main` and publishes it to GitHub Pages.
 
 ## Release
 
@@ -127,7 +127,7 @@ The plugin version is independent of `SCHEMA_VERSION`. Most releases bump `plugi
 
 ### Cutting a release
 
-1. Ensure `master` is green on CI.
+1. Ensure `main` is green on CI.
 2. Decide the new version (semver — breaking data format = major, new user-visible features = minor, bug fixes = patch).
 3. Bump `plugin.info`.`version`. If the change affects revision tiddler format, also bump `SCHEMA_VERSION` and add a row to the history table in [schema-versioning.md](schema-versioning.md).
 4. Update [Changelog.tid](../plugins/mblackman/timelord/Changelog.tid): rename the `Unreleased` section to `<version> — <YYYY-MM-DD>` and start a new empty `Unreleased` section above it. List user-visible changes only — developer-facing refactors belong in the commit log, not the changelog.
