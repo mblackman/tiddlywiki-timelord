@@ -1,0 +1,41 @@
+.mblackman-rh-warning {
+	color: <<colour dirty-indicator>>;
+	font-weight: bold;
+}
+
+.mblackman-rh-danger {
+	color: <<colour dirty-indicator>>;
+}
+
+.mblackman-rh-field-changes {
+	margin-left: 1em;
+	font-size: 0.9em;
+	color: <<colour muted-foreground>>;
+}
+
+.mblackman-rh-tag-added,
+.mblackman-rh-tag-removed {
+	padding: 0 0.3em;
+	margin-right: 0.25em;
+	border-radius: 3px;
+	border: 1px solid transparent;
+}
+
+.mblackman-rh-tag-added {
+	background: rgba(46, 160, 67, 0.15);
+	border-color: rgba(46, 160, 67, 0.45);
+}
+
+.mblackman-rh-tag-removed {
+	background: rgba(220, 80, 80, 0.15);
+	border-color: rgba(220, 80, 80, 0.45);
+}
+
+.mblackman-rh-report-box {
+	margin-top: 1em;
+	padding: 0.5em 1em;
+	background: <<colour message-background>>;
+	border: 1px solid <<colour message-border>>;
+	border-left: 3px solid <<colour message-border>>;
+	color: <<colour message-foreground>>;
+}

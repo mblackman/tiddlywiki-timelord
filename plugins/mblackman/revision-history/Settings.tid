@@ -40,7 +40,7 @@ Repair broken chains
 </$button>
 
 <$reveal type="nomatch" state="$:/temp/mblackman/revision-history/verify-report" text="">
-<div style="margin-top: 1em; padding: 0.5em 1em; background: #f4f4f4; border-left: 3px solid #888;">
+<div class="mblackman-rh-report-box">
 <$transclude tiddler="$:/temp/mblackman/revision-history/verify-report" mode="block"/>
 </div>
 </$reveal>

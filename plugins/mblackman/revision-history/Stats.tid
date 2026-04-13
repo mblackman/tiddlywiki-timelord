@@ -86,7 +86,7 @@ Cancel
 </$set>
 
 <$reveal type="nomatch" stateTitle=<<prune-report>> stateField="text" text="">
-<div style="margin-top: 1em; padding: 0.5em 1em; background: #f4f4f4; border-left: 3px solid #888;">
+<div class="mblackman-rh-report-box">
 <$transclude tiddler=<<prune-report>> mode="block"/>
 </div>
 </$reveal>

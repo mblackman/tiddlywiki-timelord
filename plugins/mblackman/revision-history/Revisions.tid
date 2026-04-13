@@ -8,7 +8,7 @@
 <$set name="charCount" value={{{[<revisionTitle>reconstructtext[]length[]]}}}>
 <$set name="revNum" value={{{[<revisionTitle>get[revision-number]]}}}>
 <$set name="brokenChain" value={{{[<revisionTitle>get[revision-broken-chain]]}}}>
-<$list filter="[<revNum>!match[]]" variable="ignored">#<<revNum>> · </$list><$link tiddler=<<revisionTitle>>><$view tiddler=<<revisionTitle>> field="modified" format="date" template="DDth MMM YYYY at 0hh:0mm"/></$link> by ''<$view tiddler=<<revisionTitle>> field="modifier"/>'' · <<charCount>> chars<$list filter="[<brokenChain>match[yes]]" variable="ignored"> · <span style="color: #a43030; font-weight: bold;" title="This revision could not be reconstructed reliably — displayed content may be incorrect">⚠ broken chain</span></$list>
+<$list filter="[<revNum>!match[]]" variable="ignored">#<<revNum>> · </$list><$link tiddler=<<revisionTitle>>><$view tiddler=<<revisionTitle>> field="modified" format="date" template="DDth MMM YYYY at 0hh:0mm"/></$link> by ''<$view tiddler=<<revisionTitle>> field="modifier"/>'' · <<charCount>> chars<$list filter="[<brokenChain>match[yes]]" variable="ignored"> · <span class="mblackman-rh-warning" title="This revision could not be reconstructed reliably — displayed content may be incorrect">⚠ broken chain</span></$list>
 <$reveal type="nomatch" state="$:/state/revision-history/restore-confirm" text=<<revisionTitle>>>
 <$button>Restore<$action-setfield $tiddler="$:/state/revision-history/restore-confirm" $value=<<revisionTitle>>/></$button>
 </$reveal>
@@ -40,14 +40,14 @@ Restore this version? <$button>Yes<$action-sendmessage $message="tm-restore-revi
 </$reveal>
 <$reveal type="match" state=<<fieldChangesState>> text="open">
 <$button set=<<fieldChangesState>> setTo="" class="tc-btn-invisible tc-tiddlylink">Fields ▾</$button>
-<div style="margin-left: 1em; font-size: 0.9em; color: #666;">
+<div class="mblackman-rh-field-changes">
 <$list filter="[<revisionTitle>revisionchangedfields[]!match[text]]" variable="fieldName">
 <div>
   <strong><<fieldName>>:</strong>
   <$list filter="[<fieldName>match[tags]]" variable="ignored">
     <$set name="newTags" value={{{[<revisionTitle>reconstructfield[tags]]}}}>
     <$set name="oldTags" value={{{[<prevRevTitle>reconstructfield[tags]]}}}>
-    <$list filter="[enlist<newTags>] -[enlist<oldTags>]" variable="t"><span style="color: #2a7a2a;">+<<t>></span> </$list><$list filter="[enlist<oldTags>] -[enlist<newTags>]" variable="t"><span style="color: #a43030;">-<<t>></span> </$list>
+    <$list filter="[enlist<newTags>] -[enlist<oldTags>]" variable="t"><span class="mblackman-rh-tag-added">+<<t>></span></$list><$list filter="[enlist<oldTags>] -[enlist<newTags>]" variable="t"><span class="mblackman-rh-tag-removed">-<<t>></span></$list>
     </$set></$set>
   </$list>
   <$list filter="[<fieldName>!match[tags]]" variable="ignored">
@@ -115,7 +115,7 @@ Sort: <$reveal type="nomatch" state=<<sortStateKey>> text="asc">Newest first | <
 
 <$list filter="[<totalCount>compare:number:gt[0]]" variable="ignored">
 <$reveal type="nomatch" state=<<deleteAllState>> text="yes">
-<$button class="tc-btn-invisible tc-tiddlylink" style="color: #a43030;">
+<$button class="tc-btn-invisible tc-tiddlylink mblackman-rh-danger">
 Delete all history (<<totalCount>>)
 <$action-setfield $tiddler=<<deleteAllState>> $value="yes"/>
 </$button>

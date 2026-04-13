@@ -33,6 +33,14 @@
 			}
 		},
 		{
+			"file": "styles.tid",
+			"fields": {
+				"type": "text/vnd.tiddlywiki",
+				"title": "$:/plugins/mblackman/revision-history/styles",
+				"tags": "$:/tags/Stylesheet"
+			}
+		},
+		{
 			"file": "Changelog.tid",
 			"fields": {
 				"type": "text/vnd.tiddlywiki",

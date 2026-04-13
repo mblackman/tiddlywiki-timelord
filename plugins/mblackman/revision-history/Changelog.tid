@@ -1,3 +1,11 @@
+! Unreleased
+
+!! Theming
+
+* UI elements (field-change panel, broken-chain warning, tag +/- badges, ''Delete all history'' button, verify/prune report boxes) now pull colors from the active TiddlyWiki palette via a stylesheet, so they adapt to dark palettes instead of using hardcoded light-mode colors.
+
+---
+
 ! v0.0.1 — 2026-04-12
 
 First public release of the mblackman fork. User-facing changes since the upstream Ashlin Duncan plugin:
