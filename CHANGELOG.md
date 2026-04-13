@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.0.3 — 2026-04-13
+
+### Rebranding
+
+- Rebranded the plugin from `tiddlywiki-revision-history` to `timelord`.
+- Updated all internal namespaces, identifiers, and UI elements to reflect the new `timelord` branding.
+
 ## v0.0.2 — 2026-04-13
 
 ### Theming

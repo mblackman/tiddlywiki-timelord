@@ -1,6 +1,6 @@
 {
   "name": "timelord",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "",
   "main": "npm run build-all",
   "scripts": {
