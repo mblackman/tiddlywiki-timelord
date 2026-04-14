@@ -55,7 +55,7 @@ Restore this version? <$button>Yes<$action-sendmessage $message="tm-restore-revi
     <$set name="oldVal" value={{{[<prevRevTitle>reconstructfield<fieldName>]}}}>
     <$set name="maxLen" value={{{[<newVal>length[]] [<oldVal>length[]] +[max[]]}}}>
     <$list filter="[<maxLen>compare:number:lt[80]]" variable="ignored"><del><<oldVal>></del> → <ins><<newVal>></ins></$list>
-    <$list filter="[<maxLen>compare:number:gteq[80]]" variable="ignored"><$diff-text source=<<oldVal>> dest=<<newVal>>/></$list>
+    <$list filter="[<maxLen>compare:number:gteq[80]]" variable="ignored"><div class="mblackman-rh-diff"><$diff-text source=<<oldVal>> dest=<<newVal>>/></div></$list>
     </$set></$set></$set>
   </$list>
 </div>
@@ -76,8 +76,7 @@ Restore this version? <$button>Yes<$action-sendmessage $message="tm-restore-revi
 <pre><<thisText>></pre>
 </$list>
 <$list filter="[<maxLen>compare:number:lteq<diffSizeLimit>]" variable="ignored">
-<$diff-text source=<<thisText>> dest=<<parentText>>/>
-
+<div class="mblackman-rh-diff"><$diff-text source=<<thisText>> dest=<<parentText>>/></div>
 </$list>
 </$set></$set></$set>
 </$list>
@@ -93,8 +92,7 @@ Restore this version? <$button>Yes<$action-sendmessage $message="tm-restore-revi
 <pre><<thisText>></pre>
 </$list>
 <$list filter="[<maxLen>compare:number:lteq<diffSizeLimit>]" variable="ignored">
-<$diff-text source=<<prevText>> dest=<<thisText>>/>
-
+<div class="mblackman-rh-diff"><$diff-text source=<<prevText>> dest=<<thisText>>/></div>
 </$list>
 </$set></$set></$set>
 </$list>

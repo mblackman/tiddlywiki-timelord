@@ -39,3 +39,31 @@
 	border-left: 3px solid <<colour message-border>>;
 	color: <<colour message-foreground>>;
 }
+
+.mblackman-rh-diff {
+	background-color: <<colour code-background>>;
+	color: <<colour foreground>>;
+	padding: 0.5em;
+	border: 1px solid <<colour tiddler-border>>;
+	border-radius: 3px;
+	font-family: monospace;
+	white-space: pre-wrap;
+	overflow-wrap: break-word;
+	margin: 0.25em 0;
+}
+
+.mblackman-rh-diff .tc-diff-equal {
+	color: <<colour foreground>>;
+	opacity: 0.8;
+}
+
+.mblackman-rh-diff .tc-diff-delete {
+	background-color: <<colour diff-delete-background>>;
+	color: <<colour diff-delete-foreground>>;
+	text-decoration: line-through;
+}
+
+.mblackman-rh-diff .tc-diff-insert {
+	background-color: <<colour diff-insert-background>>;
+	color: <<colour diff-insert-foreground>>;
+}
