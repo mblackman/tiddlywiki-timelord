@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.0.4 — 2026-04-15
+
+### Improved visuals and layout
+
+- The diff tool now works with all kinds of palettes, so its readable with a dark theme.
+- Moved the location of documentation like stats and help.
+
+### Delete history
+
+- Now you can delete revision history of deleted tiddlers on the `Deleted Tiddlers` sidebar.
+
 ## v0.0.3 — 2026-04-13
 
 ### Rebranding
