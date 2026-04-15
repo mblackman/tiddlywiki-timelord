@@ -2,12 +2,19 @@
 
 <<deletedName>>
 <$reveal type="nomatch" state="$:/state/timelord/restore-confirm" text=<<deletedName>>>
-<$button>Restore<$action-setfield $tiddler="$:/state/timelord/restore-confirm" $value=<<deletedName>>/></$button>
+<$reveal type="nomatch" state="$:/state/timelord/remove-confirm" text=<<deletedName>>>
+<$button>Restore<$action-setfield $tiddler="$:/state/timelord/restore-confirm" $value=<<deletedName>>/><$action-setfield $tiddler="$:/state/timelord/remove-confirm" $value=""/></$button> <$button>Remove from history<$action-setfield $tiddler="$:/state/timelord/remove-confirm" $value=<<deletedName>>/><$action-setfield $tiddler="$:/state/timelord/restore-confirm" $value=""/></$button>
+</$reveal>
 </$reveal>
 <$reveal type="match" state="$:/state/timelord/restore-confirm" text=<<deletedName>>>
 Restore ''<<deletedName>>''?
 <$button>Yes<$action-sendmessage $message="tm-restore-deleted-tiddler" tiddlerName=<<deletedName>>/><$action-navigate $to=<<deletedName>>/><$action-setfield $tiddler="$:/state/timelord/restore-confirm" $value=""/></$button>
 <$button>No<$action-setfield $tiddler="$:/state/timelord/restore-confirm" $value=""/></$button>
+</$reveal>
+<$reveal type="match" state="$:/state/timelord/remove-confirm" text=<<deletedName>>>
+Permanently remove all history for ''<<deletedName>>''?
+<$button>Yes<$action-sendmessage $message="tm-delete-timelord" tiddlerName=<<deletedName>>/><$action-setfield $tiddler="$:/state/timelord/remove-confirm" $value=""/></$button>
+<$button>No<$action-setfield $tiddler="$:/state/timelord/remove-confirm" $value=""/></$button>
 </$reveal>
 <br/>
 
