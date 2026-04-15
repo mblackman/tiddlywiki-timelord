@@ -12,6 +12,7 @@
     "minify": "node scripts/minify-plugin.js",
     "clean-debug": "node -e \"const fs = require('fs'); fs.rmSync('debug', {recursive: true, force: true}); fs.cpSync('demo', 'debug', {recursive: true});\"",
     "ensure-debug": "node -e \"const fs = require('fs'); if (!fs.existsSync('debug')) fs.cpSync('demo', 'debug', {recursive: true});\"",
+    "clean-serve": "npm run clean-debug && npm run serve",
     "serve": "npm run ensure-debug && npm run babel && cross-env TIDDLYWIKI_PLUGIN_PATH=plugins tiddlywiki debug --listen port=8081",
     "test": "jest",
     "test:coverage": "jest --coverage"
