@@ -34,16 +34,16 @@ Saves that happen while tracking is paused or that match the exclude filter crea
 
 !! Pruning history
 
-Infinite retention is the default. When you need to reclaim space or drop history intentionally:
+Infinite retention is the default. When you need to reclaim space or drop history intentionally, open the sidebar's ''More'' tab and choose ''Timelord'':
 
-* ''Per tiddler.'' In the Revisions tab, the ''Delete all history'' button removes every revision for the current tiddler (keeps the live tiddler). Useful if a tiddler accumulated unwanted history before you set an exclude filter.
-* ''By filter.'' In the ''Timelord Stats'' tab, the ''Delete history matching filter'' action prunes history for every tiddler a filter matches. Useful for reclaiming storage across many tiddlers at once — confirmation is required because the blast radius is larger.
+* ''Per tiddler.'' In the Revisions tab (on each tiddler's info panel), the ''Delete all history'' button removes every revision for the current tiddler (keeps the live tiddler). Useful if a tiddler accumulated unwanted history before you set an exclude filter.
+* ''By filter.'' The ''Prune History By Filter'' action removes history for every tiddler a filter matches. Useful for reclaiming storage across many tiddlers at once.
 
-Deletion only removes revision tiddlers. The live tiddler is unaffected.
+All prune actions are irreversible and require confirmation. Only revision tiddlers are removed — the live tiddler is unaffected.
 
 !! Storage and integrity
 
-* The ''Timelord Stats'' tab shows total revisions, approximate storage, tiddlers with the most revisions, and any revisions flagged as broken.
+* The ''Timelord'' tab (in the sidebar's ''More'' dropdown) shows total revisions, approximate storage, tiddlers with the most revisions, and any revisions flagged as broken.
 * Revisions are stored as a mix of full snapshots and compact per-field deltas. A full snapshot is anchored every 10 revisions, so no chain ever grows unbounded between anchors.
 * Under normal use, chains stay consistent. If sync conflicts or external edits damage them, the ''Timelord Settings'' tab has ''Verify'' and ''Repair'' actions that detect and isolate broken revisions.
 

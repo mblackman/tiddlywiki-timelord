@@ -1,9 +1,7 @@
 [[Repository|https://github.com/mblackman/tiddlywiki-timelord]]
 
-This plugin adds the ability to automatically store and display timelord. It is dependent on a slight modification of the core to add an additional hook in navigator.js.
+This plugin automatically stores and displays revision history for your tiddlers. Every time you edit a tiddler, the plugin captures a revision that you can view and restore from the tiddler's info panel.
 
-Every time you edit a tiddler, the plugin will create an internal copy of the previous tiddler. These revisions can be viewed through a new tab in the info panel.
+Renames carry the existing history forward; deletions capture one final revision and surface the tiddler in the ''Deleted Tiddlers'' sidebar tab for restore.
 
-If a tiddler is renamed, all of the previous revisions will be renamed to match. If the rename ends up overwriting an existing tiddler, the histories will be merged.
-
-Currently, there is no limit on how many revisions can exist.
+For a full walkthrough of what gets captured, how restores work, and how to prune history, see [[Timelord Help|$:/plugins/mblackman/timelord/Help]]. Storage stats and prune actions live in the sidebar under ''More → Timelord''.

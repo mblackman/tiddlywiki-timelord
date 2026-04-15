@@ -72,8 +72,8 @@
 			"fields": {
 				"type": "text/vnd.tiddlywiki",
 				"title": "$:/plugins/mblackman/timelord/Stats",
-				"caption": "Timelord Stats",
-				"tags": "$:/tags/ControlPanel/SettingsTab"
+				"caption": "Timelord",
+				"tags": "$:/tags/MoreSideBar"
 			}
 		},
 		{
@@ -81,8 +81,7 @@
 			"fields": {
 				"type": "text/vnd.tiddlywiki",
 				"title": "$:/plugins/mblackman/timelord/Help",
-				"caption": "Timelord Help",
-				"tags": "$:/tags/ControlPanel/SettingsTab"
+				"caption": "Timelord Help"
 			}
 		}
 	]
