@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.0.5 — 2026-04-16
+
+### Performance
+
+- Deduplication now reuses the `getHistory` call instead of issuing a second lookup, reducing redundant wiki store reads on every save.
+- Added `revision-text-length` field to revision tiddlers — stores original text length at write time. Char-count deltas in the Revisions tab now read this field directly instead of reconstructing the full diff chain just to get a byte count.
+
+### Plugin presentation
+
+- Plugin now has an icon, visible in the TiddlyWiki plugin library and Control Panel plugin list.
+- Updated plugin description for clarity.
+
 ## v0.0.4 — 2026-04-15
 
 ### Improved visuals and layout
