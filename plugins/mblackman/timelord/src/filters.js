@@ -1,13 +1,7 @@
 "use strict";
-import { Revisor, generateTag } from './revisor.js';
+import { Revisor, generateTag, AUTO_FIELDS } from './revisor.js';
 
 const revisor = new Revisor();
-
-// Fields that change automatically on every save — excluded from change summaries.
-const AUTO_FIELDS = new Set([
-	'modified', 'modifier', 'created', 'creator',
-	'draft.of', 'draft.title', 'revision-tag'
-]);
 
 // Filter operator: reconstructtext
 // Usage in wikitext: [<revisionTitle>reconstructtext[]]

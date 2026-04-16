@@ -71,7 +71,7 @@ function serializeFields(tiddler) {
 }
 
 // Fields that change automatically on every save — not considered "meaningful" changes.
-const AUTO_FIELDS = new Set([
+export const AUTO_FIELDS = new Set([
 	'modified', 'modifier', 'created', 'creator',
 	'draft.of', 'draft.title', 'revision-tag'
 ]);
