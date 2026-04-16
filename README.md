@@ -11,7 +11,10 @@ A personal fork of [Ashlin Duncan's tiddlywiki-revision-history](https://github.
 - **Delete capture** — When a tiddler is deleted, its final state is saved before removal. A "Deleted Tiddlers" sidebar tab keeps them discoverable and restorable.
 - **Diff view** — See exactly what changed between any two revisions, including both text diffs and field changes (e.g., added/removed tags).
 - **Smart storage** — Revisions use delta and diff compression under the hood to minimize storage bloat while retaining a complete history of all fields.
-- **Bulk-operation pause & exclusions** — Toggle tracking off globally for mass imports, or exclude specific tiddlers via filters in the Control Panel.
+- **Bulk-operation pause & exclusions** — Toggle tracking off globally for mass imports, or exclude specific tiddlers via filters in the Settings tab.
+- **Chain integrity tools** — Verify and repair revision chains from the Settings tab. Broken revisions are flagged and the first healthy revision after a break is promoted to a full snapshot.
+- **Revision stats & pruning** — A stats view in the More sidebar shows total revisions, storage bytes, and top tiddlers by revision count. Filter-based pruning lets you bulk-remove history for matched tiddlers.
+- **In-wiki help** — Built-in documentation accessible from the plugin info panel.
 
 ## Building
 
@@ -30,6 +33,7 @@ The repo ships two wiki directories:
 
 ```bash
 npm run serve          # dev server from debug/ at localhost:8081 (edits persist)
+npm run clean-serve    # wipe debug/, re-seed from demo/, then serve (fresh start)
 npm run build-debug    # build debug/ to build/index.html (sandbox preview)
 npm run clean-debug    # wipe debug/ and re-seed from demo/ (explicit reset)
 ```
