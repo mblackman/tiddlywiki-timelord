@@ -107,8 +107,11 @@ export class Revisor {
 		// even though auto-fields differ.
 		const candidateContentHash = hashName(serializeContentFields(tiddler));
 
+		// Single getHistory call — reused for dedup, snapshot decision, and delta computation
+		const history = this.getHistory(name);
+
 		// Dedup: skip if a revision with identical meaningful content already exists
-		const isDuplicate = this.getHistory(name).some(title => {
+		const isDuplicate = history.some(title => {
 			const rev = $tw.wiki.getTiddler(title);
 			if (!rev) return false;
 			// Prefer content hash (ignores auto-fields) for accurate dedup
@@ -131,7 +134,6 @@ export class Revisor {
 		// The original modified timestamp is preserved inside revision-data.
 		const capturedAt = new Date();
 
-		const history = this.getHistory(name);
 		const revisionNumber = history.length + 1;
 
 		// Get previous revision's full field state for delta computation
