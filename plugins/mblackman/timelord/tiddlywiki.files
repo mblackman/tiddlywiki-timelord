@@ -83,6 +83,13 @@
 				"title": "$:/plugins/mblackman/timelord/Help",
 				"caption": "Timelord Help"
 			}
+		},
+		{
+			"file": "icon.tid",
+			"fields": {
+				"title": "$:/plugins/mblackman/timelord/icon",
+				"type": "image/svg+xml"
+			}
 		}
 	]
 }
