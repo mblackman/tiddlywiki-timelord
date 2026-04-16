@@ -225,6 +225,22 @@ describe('Revisor.addToHistory', () => {
     expect(rev.getFieldString('revision-text-hash')).toBeTruthy();
   });
 
+  it('stores text length on revisions', () => {
+    const tiddler = new $tw.Tiddler({ title: 'T', text: 'hello world', modifier: 'me' });
+    revisor.addToHistory('T', tiddler);
+
+    const rev = $tw.wiki.getTiddler(revisor.getHistory('T')[0]);
+    expect(rev.getFieldString('revision-text-length')).toBe('11');
+  });
+
+  it('stores text length of zero for empty text', () => {
+    const tiddler = new $tw.Tiddler({ title: 'T', text: '', modifier: 'me' });
+    revisor.addToHistory('T', tiddler);
+
+    const rev = $tw.wiki.getTiddler(revisor.getHistory('T')[0]);
+    expect(rev.getFieldString('revision-text-length')).toBe('0');
+  });
+
   it('stamps each revision with the current schema version', () => {
     const tiddler = new $tw.Tiddler({ title: 'T', text: 'content', modifier: 'me' });
     revisor.addToHistory('T', tiddler);

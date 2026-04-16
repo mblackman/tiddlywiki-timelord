@@ -19,6 +19,8 @@
 //                           branch reconstruction/migration logic on this value.
 //   revision-renamed-from:  previous title, set on the revision captured at a rename event
 //   revision-renamed-to:    new title, set on the revision captured at a rename event
+//   revision-text-length:   length of the original full text at write time (avoids
+//                           reconstructing the chain just to compute char count)
 //   revision-broken-chain:  "yes" if chain-integrity check determined this revision is
 //                           unreconstructable (missing base, patch failure, or hash mismatch)
 
@@ -191,6 +193,7 @@ export class Revisor {
 			"revision-text-hash": candidateTextHash,
 			"revision-full-hash": candidateFullHash,
 			"revision-content-hash": candidateContentHash,
+			"revision-text-length": candidateText.length,
 			"revision-changed-fields": changedFieldNames.join(" "),
 			"revision-number": revisionNumber,
 			"revision-version": SCHEMA_VERSION,

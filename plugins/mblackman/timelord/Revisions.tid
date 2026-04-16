@@ -5,7 +5,7 @@
 <$set name="fieldChangesState" value={{{[<revisionTitle>addprefix[$:/state/timelord/field-changes/]]}}}>
 <$set name="prevRevTitle" value={{{[tag<revisionTag>sort[revision-date]before<revisionTitle>last[]]}}}>
 <$set name="isBinary" value={{{[<revisionTitle>has[type]get[type]!prefix[text/]then[yes]else[no]]}}}>
-<$set name="charCount" value={{{[<revisionTitle>reconstructtext[]length[]]}}}>
+<$set name="charCount" value={{{[<revisionTitle>get[revision-text-length]] ~[<revisionTitle>reconstructtext[]length[]]}}}>
 <$set name="revNum" value={{{[<revisionTitle>get[revision-number]]}}}>
 <$set name="brokenChain" value={{{[<revisionTitle>get[revision-broken-chain]]}}}>
 <$list filter="[<revNum>!match[]]" variable="ignored">#<<revNum>> · </$list><$link tiddler=<<revisionTitle>>><$view tiddler=<<revisionTitle>> field="modified" format="date" template="DDth MMM YYYY at 0hh:0mm"/></$link> by ''<$view tiddler=<<revisionTitle>> field="modifier"/>'' · <<charCount>> chars<$list filter="[<brokenChain>match[yes]]" variable="ignored"> · <span class="mblackman-rh-warning" title="This revision could not be reconstructed reliably — displayed content may be incorrect">⚠ broken chain</span></$list>
