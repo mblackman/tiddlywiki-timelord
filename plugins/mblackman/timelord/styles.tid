@@ -40,6 +40,127 @@
 	color: <<colour message-foreground>>;
 }
 
+.mblackman-rh-compare-btn {
+	font-size: 0.85em;
+	padding: 2px 8px;
+	margin: 0 2px;
+	border-radius: 3px;
+	border: 1px dashed <<colour primary>>;
+	background: <<colour page-background>>;
+	color: <<colour primary>>;
+	cursor: pointer;
+}
+
+.mblackman-rh-compare-btn:hover {
+	background: <<colour primary>>;
+	color: <<colour background>>;
+	border-style: solid;
+}
+
+.mblackman-rh-compare-active {
+	background: <<colour primary>>;
+	color: <<colour background>>;
+	border-color: <<colour primary>>;
+	border-style: solid;
+	font-weight: bold;
+	padding: 2px 8px;
+}
+
+.mblackman-rh-compare-active:hover {
+	opacity: 0.8;
+}
+
+.mblackman-rh-compare-pane {
+	margin: 0.5em 0 1em;
+	padding: 0.75em 1em;
+	background: <<colour message-background>>;
+	border: 1px solid <<colour message-border>>;
+	border-left: 3px solid <<colour primary>>;
+	border-radius: 3px;
+}
+
+.mblackman-rh-compare-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 0.5em;
+	font-weight: bold;
+}
+
+.mblackman-rh-compare-close {
+	background: none;
+	border: 1px solid <<colour tiddler-border>>;
+	border-radius: 3px;
+	cursor: pointer;
+	font-size: 1em;
+	padding: 2px 8px;
+	color: <<colour muted-foreground>>;
+	line-height: 1;
+}
+
+.mblackman-rh-compare-close:hover {
+	background: <<colour dirty-indicator>>;
+	color: <<colour background>>;
+	border-color: <<colour dirty-indicator>>;
+}
+
+.mblackman-rh-compare-hint {
+	margin: 0.5em 0;
+	padding: 0.4em 0.75em;
+	color: <<colour muted-foreground>>;
+	font-style: italic;
+	background: <<colour message-background>>;
+	border-radius: 3px;
+	border: 1px dashed <<colour tiddler-border>>;
+}
+
+.mblackman-rh-entry-info {
+	margin-bottom: 0.2em;
+}
+
+.mblackman-rh-entry-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	align-items: center;
+	margin-bottom: 0.3em;
+}
+
+.mblackman-rh-entry-actions button {
+	white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+	.mblackman-rh-entry-actions button,
+	.mblackman-rh-compare-btn {
+		padding: 6px 10px;
+		font-size: 0.9em;
+	}
+
+	.mblackman-rh-compare-active {
+		padding: 6px 10px;
+	}
+
+	.mblackman-rh-compare-header {
+		flex-wrap: wrap;
+		gap: 0.4em;
+		font-size: 0.9em;
+	}
+
+	.mblackman-rh-compare-close {
+		padding: 6px 12px;
+	}
+
+	.mblackman-rh-compare-pane {
+		padding: 0.5em 0.75em;
+	}
+
+	.mblackman-rh-diff {
+		padding: 0.3em;
+		font-size: 0.85em;
+	}
+}
+
 .mblackman-rh-diff {
 	background-color: <<colour code-background>>;
 	color: <<colour foreground>>;
