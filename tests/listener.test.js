@@ -228,6 +228,74 @@ describe('th-saving-tiddler hook', () => {
     expect(result.getFieldString('revision-tag')).toBe(generateTag('Doc'));
   });
 
+  it('captures edit-summary and stores it as revision-summary', () => {
+    const oldTiddler = new $tw.Tiddler({ title: 'Doc', text: 'old text', modifier: 'me' });
+    $tw.wiki.addTiddler(oldTiddler);
+
+    const newTiddler = new $tw.Tiddler({
+      title: 'Doc', text: 'new text', modifier: 'me',
+      'edit-summary': 'Fixed typo in intro',
+    });
+    const draft = new $tw.Tiddler({ title: 'Draft of Doc', 'draft.of': 'Doc' });
+
+    savingHook(newTiddler, draft);
+
+    const tag = generateTag('Doc');
+    const revisions = $tw.wiki.getTiddlersWithTag(tag);
+    expect(revisions.length).toBeGreaterThanOrEqual(1);
+    const rev = $tw.wiki.getTiddler(revisions[0]);
+    expect(rev.getFieldString('revision-summary')).toBe('Fixed typo in intro');
+  });
+
+  it('clears edit-summary from the returned tiddler', () => {
+    const oldTiddler = new $tw.Tiddler({ title: 'Doc', text: 'old text', modifier: 'me' });
+    $tw.wiki.addTiddler(oldTiddler);
+
+    const newTiddler = new $tw.Tiddler({
+      title: 'Doc', text: 'new text', modifier: 'me',
+      'edit-summary': 'Some note',
+    });
+    const draft = new $tw.Tiddler({ title: 'Draft of Doc', 'draft.of': 'Doc' });
+
+    const result = savingHook(newTiddler, draft);
+    expect(result.getFieldString('edit-summary')).toBe('');
+  });
+
+  it('clears edit-summary even when tracking is disabled', () => {
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: '$:/config/mblackman/timelord/enabled',
+      text: 'no',
+    }));
+
+    const oldTiddler = new $tw.Tiddler({ title: 'Doc', text: 'old', modifier: 'me' });
+    $tw.wiki.addTiddler(oldTiddler);
+
+    const newTiddler = new $tw.Tiddler({
+      title: 'Doc', text: 'new', modifier: 'me',
+      'edit-summary': 'Should be cleared anyway',
+    });
+    const draft = new $tw.Tiddler({ title: 'Draft', 'draft.of': 'Doc' });
+
+    const result = savingHook(newTiddler, draft);
+    expect(result.getFieldString('edit-summary')).toBe('');
+  });
+
+  it('does not create revision when only edit-summary changes', () => {
+    const oldTiddler = new $tw.Tiddler({ title: 'Doc', text: 'same', tags: 'foo', modifier: 'me' });
+    $tw.wiki.addTiddler(oldTiddler);
+
+    const newTiddler = new $tw.Tiddler({
+      title: 'Doc', text: 'same', tags: 'foo', modifier: 'me',
+      'edit-summary': 'no real change',
+    });
+    const draft = new $tw.Tiddler({ title: 'Draft', 'draft.of': 'Doc' });
+
+    savingHook(newTiddler, draft);
+
+    const tag = generateTag('Doc');
+    expect($tw.wiki.getTiddlersWithTag(tag)).toHaveLength(0);
+  });
+
   it('respects exclude filter', () => {
     // Set up the exclude filter to return 'Doc' when evaluated
     // We need to override filterTiddlers for this test

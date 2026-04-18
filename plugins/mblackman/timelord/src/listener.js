@@ -26,6 +26,12 @@ export function startup() {
 	$tw.hooks.addHook("th-saving-tiddler", (newTiddler, draft) => {
 		if (!draft) return newTiddler; // Guard for TW < 5.3.x
 
+		// Extract and clear edit-summary — it's ephemeral, never persisted on the live tiddler
+		const editSummary = newTiddler.getFieldString("edit-summary") || "";
+		if (editSummary) {
+			newTiddler = new $tw.Tiddler(newTiddler, { "edit-summary": undefined });
+		}
+
 		// Respect the global pause toggle
 		const enabled = $tw.wiki.getTiddlerText("$:/config/mblackman/timelord/enabled", "yes");
 		if (enabled !== "yes") return newTiddler;
@@ -68,8 +74,11 @@ export function startup() {
     		return newTiddler;
     	}
 
-    	const opts = isRename ? { renamedFrom: oldTitle, renamedTo: newTitle } : undefined;
-    	revisor.addToHistory(newTitle, oldTiddler, opts);
+    	const opts = isRename ? { renamedFrom: oldTitle, renamedTo: newTitle } : {};
+    	if (editSummary) {
+    		opts.summary = editSummary;
+    	}
+    	revisor.addToHistory(newTitle, oldTiddler, Object.keys(opts).length > 0 ? opts : undefined);
 
     	return newTiddler;
 	});

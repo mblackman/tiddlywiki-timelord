@@ -16,6 +16,14 @@ Tiddlers matching this filter will not be tracked (leave blank to track all):
 
 ---
 
+! Edit Summaries
+
+<$checkbox tiddler="$:/config/mblackman/timelord/edit-summary-enabled" field="text" checked="yes" unchecked="no" default="yes"> Show edit summary field in the editor</$checkbox>
+
+//When enabled, an input field appears below the editor body where you can describe why you made a change. The summary is stored on the revision and shown in the revision list.//
+
+---
+
 ! Diff Size Limit
 
 Maximum reconstructed text length (in characters) before the diff view falls back to showing raw text. Default: 102400 (100&nbsp;KB).

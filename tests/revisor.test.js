@@ -132,6 +132,24 @@ describe('Revisor.addToHistory', () => {
     expect(revisor.getHistory('T')).toHaveLength(1);
   });
 
+  it('stores revision-summary when provided in options', () => {
+    const tiddler = new $tw.Tiddler({ title: 'T', text: 'hello', modifier: 'me' });
+    revisor.addToHistory('T', tiddler, { summary: 'Fixed typo in intro' });
+
+    const history = revisor.getHistory('T');
+    expect(history).toHaveLength(1);
+    const rev = $tw.wiki.getTiddler(history[0]);
+    expect(rev.getFieldString('revision-summary')).toBe('Fixed typo in intro');
+  });
+
+  it('omits revision-summary when not provided', () => {
+    const tiddler = new $tw.Tiddler({ title: 'T', text: 'hello', modifier: 'me' });
+    revisor.addToHistory('T', tiddler);
+
+    const rev = $tw.wiki.getTiddler(revisor.getHistory('T')[0]);
+    expect(rev.getFieldString('revision-summary')).toBe('');
+  });
+
   it('increments revision numbers sequentially', () => {
     for (let i = 1; i <= 3; i++) {
       const t = new $tw.Tiddler({ title: 'T', text: `v${i}`, modifier: 'me' });
@@ -827,6 +845,7 @@ describe('Revisor.restoreFromRevision', () => {
       'revision-renamed-from': 'Older',
       'revision-renamed-to': 'T',
       'revision-version': '1',
+      'revision-summary': 'some edit note',
     }));
 
     revisor.restoreFromRevision('rev1');
@@ -840,6 +859,7 @@ describe('Revisor.restoreFromRevision', () => {
     expect(live.fields['revision-renamed-from']).toBeUndefined();
     expect(live.fields['revision-renamed-to']).toBeUndefined();
     expect(live.fields['revision-version']).toBeUndefined();
+    expect(live.fields['revision-summary']).toBeUndefined();
   });
 
   it('does nothing for nonexistent revision', () => {

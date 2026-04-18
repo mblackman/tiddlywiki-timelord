@@ -90,6 +90,15 @@
 				"title": "$:/plugins/mblackman/timelord/icon",
 				"type": "image/svg+xml"
 			}
+		},
+		{
+			"file": "EditSummaryField.tid",
+			"fields": {
+				"type": "text/vnd.tiddlywiki",
+				"title": "$:/plugins/mblackman/timelord/EditSummaryField",
+				"tags": "$:/tags/EditTemplate",
+				"list-after": "$:/core/ui/EditTemplate/body"
+			}
 		}
 	]
 }

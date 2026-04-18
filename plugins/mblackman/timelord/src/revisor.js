@@ -21,6 +21,7 @@
 //   revision-renamed-to:    new title, set on the revision captured at a rename event
 //   revision-text-length:   length of the original full text at write time (avoids
 //                           reconstructing the chain just to compute char count)
+//   revision-summary:       optional edit summary describing why the change was made
 //   revision-broken-chain:  "yes" if chain-integrity check determined this revision is
 //                           unreconstructable (missing base, patch failure, or hash mismatch)
 
@@ -73,7 +74,7 @@ function serializeFields(tiddler) {
 // Fields that change automatically on every save — not considered "meaningful" changes.
 export const AUTO_FIELDS = new Set([
 	'modified', 'modifier', 'created', 'creator',
-	'draft.of', 'draft.title', 'revision-tag'
+	'draft.of', 'draft.title', 'revision-tag', 'edit-summary'
 ]);
 
 // Serialize only meaningful fields (excluding auto-managed ones) into a consistently-ordered
@@ -96,6 +97,7 @@ export class Revisor {
 	addToHistory(name, tiddler, options) {
 		const renamedFrom = options && options.renamedFrom;
 		const renamedTo = options && options.renamedTo;
+		const summary = options && options.summary;
 		const candidateFields = extractFields(tiddler);
 		const candidateData = serializeFields(tiddler);
 		const candidateText = candidateFields.text || "";
@@ -205,6 +207,9 @@ export class Revisor {
 			entryFields["revision-renamed-from"] = renamedFrom;
 			entryFields["revision-renamed-to"] = renamedTo;
 		}
+		if (summary) {
+			entryFields["revision-summary"] = summary;
+		}
 		const entry = new $tw.Tiddler(entryFields);
 
 		$tw.wiki.addTiddler(entry);
@@ -312,6 +317,7 @@ export class Revisor {
 		delete restoredFields["revision-version"];
 		delete restoredFields["revision-renamed-from"];
 		delete restoredFields["revision-renamed-to"];
+		delete restoredFields["revision-summary"];
 
 		const wasEnabled = $tw.wiki.getTiddlerText("$:/config/mblackman/timelord/enabled", "yes");
 		if (wasEnabled === "yes") {

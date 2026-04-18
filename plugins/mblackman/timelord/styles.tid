@@ -114,6 +114,27 @@
 	border: 1px dashed <<colour tiddler-border>>;
 }
 
+.mblackman-rh-summary {
+	font-style: italic;
+	color: <<colour muted-foreground>>;
+	margin: 0.1em 0 0.2em;
+	font-size: 0.9em;
+}
+
+.mblackman-rh-edit-summary {
+	margin: 0.3em 0;
+}
+
+.mblackman-rh-edit-summary-input {
+	width: 100%;
+	padding: 4px 8px;
+	border: 1px dashed <<colour tiddler-border>>;
+	border-radius: 3px;
+	background: <<colour tiddler-editor-background>>;
+	color: <<colour foreground>>;
+	font-size: 0.9em;
+}
+
 .mblackman-rh-entry-info {
 	margin-bottom: 0.2em;
 }

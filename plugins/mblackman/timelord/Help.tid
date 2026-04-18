@@ -23,6 +23,16 @@ Each entry shows:
 
 Long lists paginate at 20 entries with a ''Show all'' toggle; ''Oldest first'' reverses the sort.
 
+!! Edit summaries
+
+You can annotate ''why'' a change was made — like a commit message.
+
+When editing any tiddler, a text input appears below the editor body: //Edit summary (optional — why this change?)//. Type a short note and save. The summary is stored on the revision and shown in the Revisions tab.
+
+The summary field is ephemeral — it is ''never saved on the live tiddler''. It is captured on the revision and then cleared, even if tracking is paused or the tiddler is excluded.
+
+The input is shown by default. To hide it, uncheck ''Show edit summary field in the editor'' in ''Timelord Settings''.
+
 !! Pausing capture
 
 Use the ''Timelord Settings'' tab in the [[Control Panel|$:/ControlPanel]] to:

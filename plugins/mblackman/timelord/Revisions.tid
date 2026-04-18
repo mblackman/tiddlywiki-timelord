@@ -9,6 +9,7 @@
 <$set name="revNum" value={{{[<revisionTitle>get[revision-number]]}}}>
 <$set name="brokenChain" value={{{[<revisionTitle>get[revision-broken-chain]]}}}>
 <div class="mblackman-rh-entry-info"><$list filter="[<revNum>!match[]]" variable="ignored">#<<revNum>> · </$list><$link tiddler=<<revisionTitle>>><$view tiddler=<<revisionTitle>> field="modified" format="date" template="DDth MMM YYYY at 0hh:0mm"/></$link> by ''<$view tiddler=<<revisionTitle>> field="modifier"/>'' · <<charCount>> chars<$list filter="[<brokenChain>match[yes]]" variable="ignored"> · <span class="mblackman-rh-warning" title="This revision could not be reconstructed reliably — displayed content may be incorrect">⚠ broken chain</span></$list></div>
+<$list filter="[<revisionTitle>has[revision-summary]]" variable="ignored"><div class="mblackman-rh-summary"><$view tiddler=<<revisionTitle>> field="revision-summary"/></div></$list>
 <div class="mblackman-rh-entry-actions">
 <$reveal type="nomatch" state="$:/state/timelord/restore-confirm" text=<<revisionTitle>>>
 <$button>Restore<$action-setfield $tiddler="$:/state/timelord/restore-confirm" $value=<<revisionTitle>>/></$button>

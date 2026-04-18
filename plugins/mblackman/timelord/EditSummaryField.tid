@@ -1,0 +1,7 @@
+<$reveal type="match" stateTitle="$:/config/mblackman/timelord/edit-summary-enabled" text="yes" default="yes">
+<$reveal type="nomatch" stateTitle="$:/config/mblackman/timelord/enabled" text="no" default="yes">
+<div class="mblackman-rh-edit-summary">
+<$edit-text field="edit-summary" tag="input" placeholder="Edit summary (optional — why this change?)" class="mblackman-rh-edit-summary-input"/>
+</div>
+</$reveal>
+</$reveal>
