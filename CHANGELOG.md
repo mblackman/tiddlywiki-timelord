@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.0.6 - 2026-04-17
+
+### Features
+
+- **Edit summaries** — When editing a tiddler, an optional "edit summary" field appears below the editor body. The summary is stored on the revision and displayed in the Revisions tab, providing commit-message-like annotations for changes.
+- **Revision comparison** — Compare any two revisions side by side, not just adjacent ones.
+
+### Developer experience
+
+- **Demo seed script** — Demo tiddler content and revision histories are now generated programmatically via `scripts/seed-demo.js`, driven by content definitions in `scripts/demo-content.js`. Revision tiddlers in `demo/tiddlers/` are gitignored (generated artifacts). Run `npm run seed-demo` to regenerate, or `npm run build-all` / `npm run clean-serve` which include it automatically.
+
 ## v0.0.5 — 2026-04-16
 
 ### Performance
