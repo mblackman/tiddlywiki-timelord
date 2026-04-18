@@ -1,0 +1,35 @@
+title: Welcome to Timelord
+revision-tag: $:/plugins/mblackman/timelord/revisions/3a3faa34
+tags: 
+type: text/vnd.tiddlywiki
+modified: 20260302015000000
+
+! Welcome to Timelord
+
+''Timelord'' is a TiddlyWiki plugin that automatically captures a revision every time you save a tiddler — text changes, tag edits, custom fields, everything.
+
+This demo wiki has pre-built revision histories you can explore:
+
+!! Try these
+
+* ''[[Chocolate Chip Cookies]]'' — Open the info panel (''ⓘ'' button) and click the ''Revisions'' tab. You'll see 7 revisions with text diffs, field changes, and edit summaries.
+* ''[[Grandma's Pie Crust]]'' — Was originally called "Pie Crust" — the revision history shows the rename event.
+* ''[[Kitchen Notes]]'' — Has 22 revisions to demonstrate pagination. Toggle "Oldest first" to reverse the sort.
+* ''Deleted Tiddlers'' sidebar tab — "Sourdough Starter" was deleted. You can restore it from there.
+
+!! What to look for
+
+* ''Diff views'' — Click "Diff vs. current" or "Diff vs. previous" on any revision.
+* ''Field changes'' — Revisions that changed tags or custom fields show a "Fields:" summary. Click to expand before→after values.
+* ''Edit summaries'' — Many revisions have a note explaining //why// the change was made.
+* ''Restore'' — Click "Restore this version" on any revision. The current state is captured first, so restore is undoable.
+* ''Settings'' — Open the Control Panel → Timelord to see the pause toggle, exclusion filter, and chain verify/repair tools.
+* ''Stats'' — Check More → Timelord in the sidebar for aggregate revision statistics.
+
+!! Install it
+
+Drag the plugin link from [[Installation]] into your own wiki. That's it.
+
+!! Edit something!
+
+Create a new tiddler or edit any of the recipes. Your changes will be tracked automatically — check the Revisions tab to see them appear.

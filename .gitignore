@@ -111,3 +111,9 @@ dist
 
 # Runtime debug location.
 debug/
+
+# Generated revision tiddlers in demo (seed-demo.js is source of truth)
+demo/tiddlers/$__plugins_mblackman_timelord_revisions_*
+
+# TW runtime state — changes on every server run
+demo/tiddlers/$__StoryList.tid
