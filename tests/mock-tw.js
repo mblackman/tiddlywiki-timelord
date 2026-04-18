@@ -1,4 +1,5 @@
 // Mock TiddlyWiki runtime ($tw global) for unit testing.
+const crypto = require('crypto');
 
 // Parse a TW-format tag string like '[[tag one]] simple' into ['tag one', 'simple']
 function parseTags(tagStr) {
@@ -116,6 +117,11 @@ function createMockTw() {
     utils: {
       parseStringArray(str) {
         return parseTags(str);
+      },
+      sha256(str, options) {
+        const hash = crypto.createHash('sha256').update(str).digest('hex');
+        const length = (options && options.length) || 64;
+        return hash.substring(0, length);
       },
     },
   };

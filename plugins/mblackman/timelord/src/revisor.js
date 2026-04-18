@@ -38,10 +38,28 @@ export function getRevisionVersion(revision) {
 }
 
 let _dmp = null;
+let _dmpWarned = false;
 function getDmp() {
 	if (!_dmp) {
-		const DMP = require("$:/core/modules/utils/diff-match-patch/diff_match_patch.js").diff_match_patch;
-		_dmp = new DMP();
+		try {
+			const DMP = require("$:/core/modules/utils/diff-match-patch/diff_match_patch.js").diff_match_patch;
+			_dmp = new DMP();
+		} catch (e) {
+			if (!_dmpWarned) {
+				_dmpWarned = true;
+				console.error("Timelord: diff-match-patch module not found. Revision diff compression will be disabled.");
+				if (typeof $tw !== 'undefined' && $tw.wiki && $tw.wiki.addTiddler && $tw.Tiddler) {
+					$tw.wiki.addTiddler(new $tw.Tiddler({
+						title: "$:/temp/mblackman/timelord/dmp-missing",
+						text: "⚠️ Timelord: The diff-match-patch library was not found in your TiddlyWiki core. " +
+							"Diff compression is disabled — all revisions will be stored as full snapshots. " +
+							"Please ensure you are running TiddlyWiki >= 5.3.0 with the standard core.",
+						tags: "$:/tags/Alert",
+					}));
+				}
+			}
+			return null;
+		}
 	}
 	return _dmp;
 }
@@ -167,6 +185,11 @@ export class Revisor {
 			if (delta.hasOwnProperty("text") && delta.text !== null) {
 				const prevText = prevFields.text || "";
 				const dmp = getDmp();
+				if (!dmp) {
+					// diff-match-patch unavailable — fall back to full snapshot
+					storedData = candidateData;
+					storageMode = "full";
+				} else {
 				const patches = dmp.patch_make(prevText, delta.text);
 				const patchText = dmp.patch_toText(patches);
 				if (patchText.length < delta.text.length) {
@@ -177,6 +200,7 @@ export class Revisor {
 					// Patch larger than full text — fall back to full snapshot
 					storedData = candidateData;
 					storageMode = "full";
+				}
 				}
 			} else {
 				// Text didn't change (or was removed) — store delta as-is
@@ -396,6 +420,11 @@ export class Revisor {
 		let patchFailures = 0;
 		let parseFailures = 0;
 		const dmp = getDmp();
+		if (!dmp) {
+			// diff-match-patch unavailable — cannot reconstruct diff/delta chains
+			console.warn("Cannot reconstruct text: diff-match-patch unavailable");
+			return { text: this._getRevisionText(revision), patchFailures: 0, missingSnapshot: false, parseFailures: 1 };
+		}
 
 		for (let i = snapshotIdx + 1; i <= targetIdx; i++) {
 			const rev = sorted[i];
@@ -558,7 +587,7 @@ export class Revisor {
 		try {
 			const fields = this.reconstructAllFields(revisionTitle);
 			const serialized = serializeFieldsObject(fields);
-			const computedHash = hashName(serialized);
+			const computedHash = contentHash(serialized);
 			return {
 				ok: computedHash === storedHash,
 				storedHash,
@@ -877,9 +906,19 @@ export class Revisor {
 	}
 }
 
+// SHA-256 hash of a string, returned as a 64-character lowercase hex string.
+// Uses TiddlyWiki's built-in $tw.utils.sha256 (backed by the SJCL library).
+// Used for content dedup and integrity verification where collisions would mean data loss.
+export function contentHash(name) {
+	return $tw.utils.sha256(name, { length: 64 });
+}
+
 // djb2 hash of a string, returned as an 8-char lowercase hex string.
-// Used to produce a path-safe, rename-stable segment for revision tiddler titles and tags.
-export function hashName(name) {
+// Used ONLY for revision tiddler title/tag path segments — a lightweight,
+// stable identifier for grouping revisions by tiddler name.
+// Changing this function would orphan every existing revision chain, so it is
+// intentionally kept as the original djb2 even though SHA-256 is used elsewhere.
+export function pathHash(name) {
 	let hash = 5381;
 	for (let i = 0; i < name.length; i++) {
 		hash = ((hash << 5) + hash + name.charCodeAt(i)) | 0;
@@ -887,18 +926,22 @@ export function hashName(name) {
 	return (hash >>> 0).toString(16).padStart(8, '0');
 }
 
+// Backward-compatible alias — existing callers (tests, seed scripts, filters)
+// that hash content for dedup/integrity now get SHA-256.
+export const hashName = contentHash;
+
 export function generateTitle({ name, timestampMs }) {
 	let id = 0;
 	let title;
 	do {
-		title = `${baseName}${hashName(name)}/${timestampMs}-${id}`;
+		title = `${baseName}${pathHash(name)}/${timestampMs}-${id}`;
 		id++;
 	} while ($tw.wiki.tiddlerExists(title));
 	return title;
 }
 
 export function generateTag(name) {
-	return `${baseName}${hashName(name)}`;
+	return `${baseName}${pathHash(name)}`;
 }
 
 export function escapeRegExp(string) {
