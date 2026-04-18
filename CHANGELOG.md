@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.0.7 — 2026-04-17
+
+### Security
+
+- **SHA-256 content hashing** — Revision dedup and integrity hashes (`revision-full-hash`, `revision-content-hash`, `revision-text-hash`) now use SHA-256 via TiddlyWiki's built-in SJCL library, replacing the previous 32-bit djb2 hash. This eliminates the risk of hash collisions causing silent data loss in large wikis.
+- Tag and title path segments continue to use the lightweight djb2 hash (`pathHash`) for backward compatibility and brevity.
+
+### Resilience
+
+- **diff-match-patch safety check** — If the diff-match-patch library is missing from the TiddlyWiki core, the plugin now degrades gracefully: an in-wiki alert is shown, and all revisions are stored as full snapshots instead of crashing.
+
 ## v0.0.6 - 2026-04-17
 
 ### Features
