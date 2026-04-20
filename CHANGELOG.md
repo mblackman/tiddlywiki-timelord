@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.0.8 — 2026-04-20
+
+### Cleanup
+
+- Refactored the structure fo the revision tiddler to be easier to understand and maintain.
+- Fixed the demo site's, `Grandma's Pie Crust` history.
+
 ## v0.0.7 — 2026-04-17
 
 ### Security
