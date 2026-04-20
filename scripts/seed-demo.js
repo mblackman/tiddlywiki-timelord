@@ -74,7 +74,12 @@ function deleteTiddler(name) {
 function renameTiddler(oldName, newName, fieldUpdates) {
   const existing = $tw.wiki.getTiddler(oldName);
   if (!existing) return;
-  const fields = Object.assign({}, existing.fields, { title: newName }, fieldUpdates || {});
+  const fields = Object.assign(
+    {},
+    existing.fields,
+    { title: newName, 'revision-tag': generateTag(newName) },
+    fieldUpdates || {}
+  );
   const tiddler = new $tw.Tiddler(fields);
   $tw.wiki.deleteTiddler(oldName);
   $tw.wiki.addTiddler(tiddler);
