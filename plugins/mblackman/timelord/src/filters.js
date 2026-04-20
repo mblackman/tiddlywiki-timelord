@@ -62,6 +62,29 @@ export const revisionchangedfields = function(source, operator, options) {
 	return results;
 };
 
+// Filter operator: hastimelord
+// Usage: [subfilter<someFilter>hastimelord[]]
+// Keeps only input titles that have at least one revision tiddler recorded
+// (i.e. would actually have history pruned). Useful for UIs that preview
+// prune-by-filter results so the count matches what the backend will delete.
+export const hastimelord = function(source, operator, options) {
+	const baseName = "$:/plugins/mblackman/timelord/revisions/";
+	const chainNames = new Set();
+	const each = $tw.wiki && $tw.wiki.each && $tw.wiki.each.bind($tw.wiki);
+	if (each) {
+		each(function(tiddler, title) {
+			if (!title || title.indexOf(baseName) !== 0) return;
+			const revOf = tiddler && tiddler.getFieldString && tiddler.getFieldString("revision-of");
+			if (revOf) chainNames.add(revOf);
+		});
+	}
+	const results = [];
+	source(function(tiddler, title) {
+		if (chainNames.has(title)) results.push(title);
+	});
+	return results;
+};
+
 // Filter operator: reconstructfield
 // Usage: [<revisionTitle>reconstructfield[fieldname]]
 // Returns the fully reconstructed value for a specific field in a revision tiddler.

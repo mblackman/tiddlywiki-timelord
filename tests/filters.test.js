@@ -1,6 +1,6 @@
 const { resetTw } = require('./mock-tw');
 const { generateTag, Revisor } = require('../plugins/mblackman/timelord/src/revisor');
-const { reconstructtext, revisionchangedfields, reconstructfield } = require('../plugins/mblackman/timelord/src/filters');
+const { reconstructtext, revisionchangedfields, reconstructfield, hastimelord } = require('../plugins/mblackman/timelord/src/filters');
 const DMP = require('diff-match-patch');
 
 beforeEach(() => {
@@ -369,5 +369,43 @@ describe('revisionchangedfields — branch coverage', () => {
 
     const results = revisionchangedfields(makeSource('rev2'), {}, {});
     expect(results).toContain('text');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// hastimelord filter operator
+// ---------------------------------------------------------------------------
+
+describe('hastimelord', () => {
+  function seedRevision(name) {
+    const tag = generateTag(name);
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: '$:/plugins/mblackman/timelord/revisions/' + name + '-0/1',
+      tags: '[[' + tag + ']]',
+      'revision-of': name,
+      'revision-date': 1000,
+      'revision-storage': 'full',
+      'revision-data': JSON.stringify({ text: 'x' }),
+    }));
+  }
+
+  it('keeps only titles that have at least one revision tiddler', () => {
+    seedRevision('HasHistory');
+    $tw.wiki.addTiddler(new $tw.Tiddler({ title: 'NoHistory', text: 'live' }));
+
+    const results = hastimelord(makeSource('HasHistory', 'NoHistory', 'DoesNotExist'), {}, {});
+    expect(results).toEqual(['HasHistory']);
+  });
+
+  it('returns empty array when no input matches a chain', () => {
+    seedRevision('Kept');
+    const results = hastimelord(makeSource('fkldasjfdlsakjfds', 'garbage'), {}, {});
+    expect(results).toEqual([]);
+  });
+
+  it('returns empty array when wiki has no revision tiddlers', () => {
+    $tw.wiki.addTiddler(new $tw.Tiddler({ title: 'T', text: 'live' }));
+    const results = hastimelord(makeSource('T'), {}, {});
+    expect(results).toEqual([]);
   });
 });

@@ -51,13 +51,14 @@ Filter:
 
 <$set name="pruneFilter" value={{{[<prune-filter-tiddler>get[text]]}}}>
 <$list filter="[<pruneFilter>!match[]]" variable="ignored">
-<$set name="matchCount" value={{{[subfilter<pruneFilter>count[]]}}}>
+<$set name="prunableCount" value={{{[subfilter<pruneFilter>hastimelord[]count[]]}}}>
 
-''<<matchCount>>'' tiddler(s) match this filter (not all will have timelord).
+''<<prunableCount>>'' tiddler(s) with timelord will be deleted.
 
+<$list filter="[<prunableCount>compare:number:gt[0]]" variable="ignored">
 <details>
-<summary>Show matching tiddler names</summary>
-<$list filter="[subfilter<pruneFilter>]" variable="t">
+<summary>Show tiddlers with timelord that will be pruned</summary>
+<$list filter="[subfilter<pruneFilter>hastimelord[]]" variable="t">
 * <<t>>
 </$list>
 </details>
@@ -81,6 +82,7 @@ Cancel
 <$action-setfield $tiddler="$:/state/timelord/prune-confirm" $value=""/>
 </$button>
 </$reveal>
+</$list>
 </$set>
 </$list>
 </$set>
