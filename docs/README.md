@@ -25,8 +25,12 @@ plugins/mblackman/timelord/
     filters.js       # filter operators used by the UI
   Revisions.tid      # Info-panel tab ($:/tags/TiddlerInfo)
   DeletedTiddlers.tid# sidebar tab ($:/tags/SideBar)
-  ControlPanel.tid   # settings tab ($:/tags/ControlPanel)
-  Settings.tid       # exposed toggles
+  Settings.tid       # settings tab ($:/tags/ControlPanel/SettingsTab)
+  Help.tid           # user help tab ($:/tags/ControlPanel/SettingsTab)
+  Stats.tid          # stats tab ($:/tags/MoreSideBar)
+  EditSummaryField.tid # optional edit-summary input ($:/tags/EditTemplate)
+  styles.tid         # theme-aware stylesheet ($:/tags/Stylesheet)
+  icon.tid           # plugin icon
   Readme.tid         # in-wiki plugin readme
   plugin.info
   tiddlywiki.files   # maps lib/*.js and *.tid into TW module titles

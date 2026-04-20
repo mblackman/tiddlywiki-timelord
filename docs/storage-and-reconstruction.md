@@ -1,6 +1,6 @@
 # Storage and Reconstruction
 
-The plugin stores revisions in one of three modes, indicated by the `revision-storage` field. Each mode is a different shape for the `revision-data` JSON blob. This document explains when each mode is chosen, what the blob contains, and how reconstruction walks the chain.
+The plugin stores revisions in one of two modes, indicated by the `revision-storage` field. Each mode is a different shape for the `revision-data` JSON blob. This document explains when each mode is chosen, what the blob contains, and how reconstruction walks the chain.
 
 ## Storage modes
 
@@ -21,11 +21,6 @@ The plugin stores revisions in one of three modes, indicated by the `revision-st
 - If a delta would produce a patch text larger than the new text itself, `addToHistory` falls back to `"full"` on the spot.
 - This is the default mode for ordinary edits.
 
-### `"diff"` — legacy all-fields with patched text
-
-- `revision-data` is a JSON object containing **all** fields, but the `text` field holds a patch string instead of the full text.
-- No new revisions are written in this mode today. It exists so revisions created by earlier builds of the plugin remain readable. `reconstructText` and `reconstructAllFields` both branch on it.
-
 ## When `full` vs `delta` is chosen
 
 Defined in [`Revisor.addToHistory`](../plugins/mblackman/timelord/src/revisor.js). Decision order:
@@ -33,16 +28,13 @@ Defined in [`Revisor.addToHistory`](../plugins/mblackman/timelord/src/revisor.js
 1. If there is no previous revision, write `"full"`.
 2. If [`_shouldStoreSnapshot(history)`](../plugins/mblackman/timelord/src/revisor.js) returns `true` — i.e. there have been `SNAPSHOT_INTERVAL - 1 = 9` consecutive non-snapshot revisions since the last full snapshot — write `"full"`.
 3. Otherwise, compute the delta. If `text` changed and `dmp.patch_toText(...)` is shorter than the new text, store `"delta"` with the patch. If the patch is not shorter, fall back to `"full"` for this revision.
+4. If diff-match-patch is unavailable, `addToHistory` falls back to `"full"` for every revision and surfaces an alert tiddler; see `getDmp()` in `revisor.js`.
 
 This guarantees that any chain of `"delta"` revisions is bounded in length (≤ 9) before a fresh `"full"` anchors it, which bounds reconstruction cost.
 
 ## Dedup
 
-Before writing anything, `addToHistory` dedups against existing revisions:
-
-1. Prefer `revision-content-hash` (djb2 of meaningful fields only). This is what makes a restore from an old revision correctly dedup — `modified` and `revision-tag` differ but content doesn't.
-2. Fall back to `revision-full-hash` for older revisions that don't carry `revision-content-hash`.
-3. Final fallback: literal text equality, for very old revisions that pre-date both hashes.
+Before writing anything, `addToHistory` dedups against existing revisions by comparing `revision-content-hash` (SHA-256 of meaningful fields only). This is what makes a restore from an old revision correctly dedup — `modified` and `revision-tag` differ but content doesn't.
 
 If a match is found, `addToHistory` returns early and no new revision is written.
 
@@ -55,30 +47,24 @@ Two entry points, both on `Revisor`:
 
 ### Text chain walk
 
-1. If storage is `"full"` (or unknown, or old-format with no `revision-data`), return the text directly from `revision-data.text` (or the revision tiddler's `text` field for pre-`revision-data` revisions).
-2. Otherwise (`"diff"` or `"delta"`):
+1. If storage is `"full"`, return the text directly from `revision-data.text`.
+2. Otherwise (`"delta"`):
    1. Pull the history list for this tiddler (oldest-first).
    2. Find the target revision's index.
-   3. Walk backward until a non-`diff`/`delta` revision is found — the anchor snapshot.
-   4. Starting from the snapshot's text, apply each forward patch in order:
-      - For `"delta"` revisions: if `revision-data.text` is absent, text didn't change this step — carry forward. If present, treat it as a patch and apply.
-      - For `"diff"` revisions: the revision tiddler's text field is the patch.
+   3. Walk backward until a non-`delta` revision is found — the anchor snapshot.
+   4. Starting from the snapshot's text, apply each forward delta's text patch in order. If `revision-data.text` is absent on a delta step, text didn't change — carry forward.
 3. Patch application uses `diff_match_patch.patch_apply`. If any hunk fails, a warning is logged and the best-effort result is returned.
 
 ### Field chain walk
 
 `reconstructAllFields` handles every field, not just text.
 
-1. For `"full"` or `"diff"`: parse `revision-data` as-is. For `"diff"`, replace `text` with the reconstructed value via `reconstructText`.
+1. For `"full"`: parse `revision-data` as-is.
 2. For `"delta"`:
    1. Walk back through the history to find the nearest non-`"delta"` revision — the base.
    2. Recursively reconstruct the base's full fields.
    3. Walk forward applying each intervening delta: for every key in the delta, set the value (or delete the field if the value is `null`). Skip `text` during this pass.
    4. Finally, replace `fields.text` with `reconstructText(revisionTitle)` so text lookup uses the patch-aware path above.
-
-### Old-format fallback
-
-Revisions that pre-date the `revision-data` field (very old installations, or revisions imported from the upstream `ashlin/timelord` plugin) have their fields stored directly on the revision tiddler. `reconstructAllFields` detects the absence of `revision-data` and returns the tiddler's own fields verbatim.
 
 ## Worked example
 
@@ -99,10 +85,12 @@ To read revision `#12`'s text: walk back to `#10` (the anchor), then apply patch
 
 ## Hashing
 
-The plugin uses **djb2** for every hash on revisions. It is not cryptographic — it is used only to cheaply detect identical content. See `hashName` at the bottom of [`revisor.js`](../plugins/mblackman/timelord/src/revisor.js). The output is 8 lowercase hex characters.
+The plugin uses **SHA-256** (via `$tw.utils.sha256`, SJCL-backed) for every content hash on revisions. Output is a 64-character lowercase hex string. Exported as `contentHash` from [`revisor.js`](../plugins/mblackman/timelord/src/revisor.js); `hashName` is a backward-compatible alias used by callers.
 
 Three distinct hashes exist:
 
-- `revision-text-hash` — hash of the reconstructed full text only.
+- `revision-text-hash` — hash of the captured full text only.
 - `revision-full-hash` — hash of the sorted-key JSON of all fields.
 - `revision-content-hash` — like `revision-full-hash` but with auto-fields stripped. This is the dedup key.
+
+A separate lightweight hash — `pathHash` — exists only for revision title/tag path segments. It's djb2 (8 hex chars) and is not used for dedup or integrity; it's just an identifier grouping revisions by tiddler name.

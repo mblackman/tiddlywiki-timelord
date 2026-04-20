@@ -6,17 +6,17 @@ This page enumerates every place the plugin touches the TiddlyWiki runtime: hook
 
 `src/listener.js` is declared as a startup module in `tiddlywiki.files` with module type `startup`. TiddlyWiki calls its exported `startup()` function once during boot. That function registers everything listed below.
 
-Minimum TW version: **5.3.0**. Earlier versions do not pass the draft as the second argument of `th-saving-tiddler`; a `if (!draft) return newTiddler` guard keeps the plugin from crashing on older TW but also disables revision capture (rename detection is no longer possible).
+Minimum TW version: **5.3.0** — the two-argument form of `th-saving-tiddler` (which passes the draft alongside the new tiddler) is what the plugin relies on to detect renames.
 
 ## Hooks
 
 ### `th-saving-tiddler`
 
-Registered in `listener.js:26`. Signature: `(newTiddler, draft) → newTiddler`.
+Registered in `listener.js`. Signature: `(newTiddler, draft) → newTiddler`.
 
 Guards in order (any `return newTiddler` short-circuits without writing a revision):
 
-1. `draft` is falsy — old TW version, cannot detect renames; skip.
+1. `draft` is falsy.
 2. `$:/config/mblackman/timelord/enabled` is not `"yes"`.
 3. `draft.of` is empty — new tiddler, nothing to compare against.
 4. `$tw.wiki.getTiddler(oldTitle)` returns nothing — no pre-save state to save.
@@ -25,17 +25,18 @@ Guards in order (any `return newTiddler` short-circuits without writing a revisi
 
 Behavior when not short-circuited:
 
+- The listener reads and strips any `edit-summary` field on the incoming tiddler, then passes it to `addToHistory` via `opts.summary` so the revision records the summary but the live tiddler does not retain it.
 - If `oldTitle !== newTitle`, call `renameHistory(oldTitle, newTitle)` to retag existing revisions.
 - Set `revision-tag: generateTag(newTitle)` on `newTiddler` (returned to TW, so it lands on the live tiddler).
 - If it's a rename that overwrites an existing tiddler, snapshot *that* tiddler's current state first (via `addToHistory(newTitle, existing)`) so the overwrite is recoverable.
-- If `tiddlerFieldsChanged(oldTiddler, newTiddler)` is `false`, return without writing.
-- Otherwise `addToHistory(newTitle, oldTiddler, { renamedFrom, renamedTo })`. The `opts` object is only passed on actual renames.
+- If `tiddlerFieldsChanged(oldTiddler, newTiddler)` is `false` and there is no `edit-summary`, return without writing.
+- Otherwise `addToHistory(newTitle, oldTiddler, opts)` where `opts` may carry `renamedFrom`/`renamedTo` and/or `summary`.
 
 The old tiddler is what gets captured — the listener records the state being replaced, not the new state. The new state is what becomes the live tiddler.
 
 ### `th-deleting-tiddler`
 
-Registered in `listener.js:93`. Signature: `(tiddler) → tiddler`.
+Registered in `listener.js`. Signature: `(tiddler) → tiddler`.
 
 Same guards as above (enabled, system/shadow, exclude-filter). On success, calls `revisor.captureDeletedState(title, tiddler)`, which writes a revision (subject to dedup) and stamps `revision-deleted: yes` on the matching revision.
 
@@ -91,8 +92,16 @@ Used in `Revisions.tid` for both diff sources and the character count (`length[]
 Returns the list of meaningful field names that changed in the revision.
 
 - Reads `revision-changed-fields` if present (the common case).
-- Falls back to computing it on the fly by reconstructing both this revision and the previous one and diffing their field maps. This keeps old revisions (pre-`revision-changed-fields` field) working.
+- Falls back to computing it on the fly by reconstructing both this revision and the previous one and diffing their field maps.
 - Excludes auto-fields from the fallback computation.
+
+### `hastimelord`
+
+```
+[subfilter<someFilter>hastimelord[]]
+```
+
+Keeps only input titles that have at least one revision tiddler recorded. Used by the prune-by-filter UI so the preview count matches what the backend will actually delete.
 
 ### `reconstructfield`
 
@@ -119,13 +128,18 @@ All three are wired to visible controls in `Settings.tid` (a `$:/tags/ControlPan
 
 | File | Tag | Role |
 |------|-----|------|
-| `Revisions.tid` | `$:/tags/TiddlerInfo` | Per-tiddler revision list: sortable, paginated (20/all), restore, diff-vs-current, diff-vs-previous, field-changes expansion, rename markers. |
-| `DeletedTiddlers.tid` | `$:/tags/SideBar` | Sidebar tab listing tiddler names that have a `revision-deleted` revision but no live tiddler. Offers a Restore button per row. |
-| `ControlPanel.tid` | `$:/tags/ControlPanel` | Toggles for enabled / exclude-filter. |
-| `Settings.tid` | — | Shared helper state. |
-| `Readme.tid` | — | In-wiki plugin readme. |
+| `Revisions.tid` | `$:/tags/TiddlerInfo` | Per-tiddler revision list: sortable, paginated (20/all), restore, diff-vs-current, diff-vs-previous, arbitrary revision comparison, field-changes expansion, rename markers, delete-all-history. |
+| `DeletedTiddlers.tid` | `$:/tags/SideBar` | Sidebar tab listing tiddler names that have a `revision-deleted` revision but no live tiddler. Offers Restore and delete-history buttons per row. |
+| `Settings.tid` | `$:/tags/ControlPanel/SettingsTab` | Enabled toggle, exclude-filter, diff-size-limit, verify/repair buttons, prune-by-filter. |
+| `Stats.tid` | `$:/tags/MoreSideBar` | Aggregate stats view: total revisions, bytes, chains, top tiddlers by revision count. |
+| `Help.tid` | `$:/tags/ControlPanel/SettingsTab` | In-wiki user help. |
+| `EditSummaryField.tid` | `$:/tags/EditTemplate` | Adds the optional `edit-summary` field below the editor body. |
+| `DeletedTiddlers.tid`, `Revisions.tid`, `Settings.tid`, `Stats.tid` consumers | — | All share state-tiddler conventions listed below. |
+| `styles.tid` | `$:/tags/Stylesheet` | Theme-aware styles for the diff view, field-change panel, broken-chain badge, tag +/-, and report boxes. |
+| `Readme.tid` | — | In-wiki plugin readme (displayed on the plugin info panel). |
+| `icon.tid` | — | Plugin icon shown in the plugin library. |
 
-The `Revisions.tid` entry template is factored into a `\define entry-template()` macro so the same rendering is reused across four filter variants (two sort directions × paginated/all).
+Revision rendering in `Revisions.tid` is factored into several named macros (restore-actions, compare-buttons, field-changes, diff-panel, compare-pane, delete-all-history) so the entry template stays flat.
 
 ## State tiddlers created at runtime
 

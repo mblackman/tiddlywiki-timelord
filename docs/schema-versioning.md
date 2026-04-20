@@ -12,8 +12,7 @@ export const SCHEMA_VERSION = "1";
 
 Every revision written by `addToHistory` is stamped with `revision-version: SCHEMA_VERSION`. The helper `getRevisionVersion(revision)` returns the field value or `"0"` if the field is missing.
 
-- `"0"` — pre-versioning. Produced by any plugin build before this field was introduced, and by all revisions written by the upstream `ashlin/timelord` plugin. Readers must be prepared for the whole list of fields documented in [data-model.md](data-model.md) to be partially missing; in particular, `revision-data`, `revision-content-hash`, `revision-changed-fields`, `revision-number`, `revision-renamed-from`/`-to`, and the `"delta"` storage mode may all be absent.
-- `"1"` — current format. All documented fields are present; `revision-storage` may be `"full"` or `"delta"`; legacy `"diff"` may appear on revisions migrated in.
+- `"1"` — current format. All documented fields are present; `revision-storage` is `"full"` or `"delta"`.
 
 ## When to bump
 
@@ -38,14 +37,12 @@ When you bump `SCHEMA_VERSION`:
 
 ## Reader responsibilities (tolerating old versions)
 
-Today the plugin does not branch on `revision-version` — it detects old-format revisions by the absence of specific fields (`revision-data`, `revision-content-hash`, `revision-changed-fields`). This works because the schema has only grown so far.
-
-When a format change is breaking rather than additive, switch to explicit version branching:
+When a format change is breaking rather than additive, branch explicitly on `getRevisionVersion`:
 
 ```js
 const v = getRevisionVersion(revision);
-if (v === "0" || v === "1") {
-  // legacy path
+if (v === "1") {
+  // v1 path
 } else if (v === "2") {
   // new path
 }
@@ -60,13 +57,12 @@ The plugin does **not** rewrite existing revisions when the schema changes. That
 - Revisions are immutable user history. Rewriting them on plugin load would destroy audit integrity, slow first boot on large wikis, and create a window where a partially-migrated wiki is inconsistent.
 - TiddlyPWA syncs every tiddler change to the server; a mass rewrite would produce an O(history) sync storm.
 
-Instead, readers tolerate older formats. The dedup path already demonstrates the pattern: `revision-content-hash` is preferred, `revision-full-hash` is the fallback, raw text equality is the final fallback. Future schema changes should follow the same "new fields augment, old fields remain readable" principle unless there's no way to avoid a breaking change — in which case add an explicit reader branch keyed on `getRevisionVersion`.
+Instead, readers tolerate older formats. Future schema changes should follow the "new fields augment, old fields remain readable" principle unless there's no way to avoid a breaking change — in which case add an explicit reader branch keyed on `getRevisionVersion`.
 
 ## History so far
 
-| Version | Introduced in | What changed |
-|---------|---------------|--------------|
-| `"0"`   | pre-fork (upstream `ashlin/timelord`) | Original format. No `revision-data`, no hashes, no delta storage; revision tiddlers held fields directly; no rename markers; no change-fields metadata. |
-| `"1"`   | Phase 10 | All fields serialized into `revision-data`; three-mode storage (`full`/`diff`/`delta`); content hash for dedup; `revision-number`, `revision-changed-fields`, `revision-renamed-from`/`-to`; `revision-version` itself. |
+| Version | What changed |
+|---------|--------------|
+| `"1"`   | Initial versioned format. All fields serialized into `revision-data`; two-mode storage (`full`/`delta`); SHA-256 content hash for dedup; `revision-number`, `revision-changed-fields`, `revision-renamed-from`/`-to`, `revision-text-length`, `revision-summary`, `revision-broken-chain`. |
 
 When the next bump lands, add a row here describing the diff from `"1"`.

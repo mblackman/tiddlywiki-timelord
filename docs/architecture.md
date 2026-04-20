@@ -5,8 +5,8 @@
 - **Infinite, lossless history.** Every meaningful save of a user tiddler produces at most one new revision tiddler. Nothing is pruned automatically.
 - **All fields tracked, not just text.** Tags, type, custom fields, and renames are all captured.
 - **Compact storage.** Revisions use a combination of full snapshots and delta/diff compression so long histories don't explode wiki size.
-- **Transparent reconstruction.** The UI can read any historical revision as if it were a full snapshot; delta/diff resolution happens behind filter operators.
-- **No core overrides.** The plugin wires into TiddlyWiki only via public `$tw.hooks` and widget messages. No copy of `navigator.js` or similar core-file patching.
+- **Transparent reconstruction.** The UI can read any historical revision as if it were a full snapshot; delta resolution happens behind filter operators.
+- **No core overrides.** The plugin wires into TiddlyWiki only via public `$tw.hooks` and widget messages.
 
 ## Module layout
 
@@ -32,14 +32,15 @@ The three JS modules are deliberately small and have clear responsibilities:
 
 ### Save
 
-1. User saves a draft in the editor. TiddlyWiki fires `th-saving-tiddler(newTiddler, draft)` (TW ≥ 5.3.x).
+1. User saves a draft in the editor. TiddlyWiki fires `th-saving-tiddler(newTiddler, draft)`.
 2. `listener.js` guards: the plugin must be enabled (`$:/config/mblackman/timelord/enabled`), neither old nor new titles can be system/shadow, and the new title must not match the exclusion filter.
-3. The listener reads `draft.of` to discover the pre-save title. If it differs, it's a rename — `Revisor.renameHistory(oldTitle, newTitle)` runs before anything else.
-4. The listener injects a `revision-tag` field on the saved tiddler so the UI can look up history quickly (`[tag<revisionTag>...]`).
-5. If `tiddlerFieldsChanged(oldTiddler, newTiddler)` returns `false` (only auto-fields like `modified` moved), no revision is written.
-6. Otherwise the listener calls `revisor.addToHistory(newTitle, oldTiddler, opts)`. `opts` may carry `{ renamedFrom, renamedTo }` to stamp rename markers on the new revision.
-7. Inside `addToHistory`:
-   - Serialize the tiddler's fields, compute three hashes (`text`, `full`, `content`), and dedup against existing revisions via `revision-content-hash`.
+3. The listener reads and strips any `edit-summary` field from the tiddler so it doesn't persist on the live tiddler; the value is forwarded to `addToHistory` as `opts.summary`.
+4. The listener reads `draft.of` to discover the pre-save title. If it differs, it's a rename — `Revisor.renameHistory(oldTitle, newTitle)` runs before anything else.
+5. The listener injects a `revision-tag` field on the saved tiddler so the UI can look up history quickly (`[tag<revisionTag>...]`).
+6. If `tiddlerFieldsChanged(oldTiddler, newTiddler)` returns `false` (only auto-fields like `modified` moved) and no summary was supplied, no revision is written.
+7. Otherwise the listener calls `revisor.addToHistory(newTitle, oldTiddler, opts)`. `opts` may carry `{ renamedFrom, renamedTo, summary }`.
+8. Inside `addToHistory`:
+   - Serialize the tiddler's fields, compute three SHA-256 hashes (`text`, `full`, `content`), and dedup against existing revisions via `revision-content-hash`.
    - Decide storage mode (`full` / `delta`) based on snapshot interval and patch-vs-text size (see [storage-and-reconstruction.md](storage-and-reconstruction.md)).
    - Compute `revision-changed-fields` by diffing against the reconstructed previous revision.
    - Write a new revision tiddler tagged with `generateTag(name)`.
@@ -95,7 +96,7 @@ Revisions.tid  ──filter──▶  [tag<revisionTag>...]
               Revisor.reconstructAllFields / reconstructText
                     │
                     ▼
-         walks delta/diff chain to nearest snapshot
+         walks delta chain to nearest snapshot
 ```
 
 The UI never touches storage modes directly — it just calls the filter operators and gets back the reconstructed value.

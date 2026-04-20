@@ -74,7 +74,7 @@
 
 ## v0.0.1 — 2026-04-12
 
-First public release of the mblackman fork. User-facing changes since the upstream Ashlin Duncan plugin:
+First public release.
 
 ### Revision capture
 
@@ -121,4 +121,3 @@ First public release of the mblackman fork. User-facing changes since the upstre
 ### Compatibility
 
 - Requires TiddlyWiki 5.3.0 or newer.
-- The `navigator.js` core override from the upstream plugin has been removed — revision capture now rides the standard `th-saving-tiddler` hook.

@@ -1,6 +1,6 @@
 # Timelord for TiddlyWiki
 
-A personal fork of [Ashlin Duncan's tiddlywiki-revision-history](https://github.com/AshlinDuncan/tiddlywiki-revision-history), featuring significant improvements to the interface, storage mechanisms, and core TiddlyWiki integration.
+Full revision history for TiddlyWiki tiddlers — diffs, restores, and delete capture across every field, not just text.
 
 [Demo](https://mblackman.github.io/tiddlywiki-timelord/)
 

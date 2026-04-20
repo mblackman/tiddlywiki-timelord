@@ -6,13 +6,11 @@ Delta-compressed history is efficient but fragile: a single missing revision can
 
 A revision is classified as broken when any of the following is true:
 
-1. **No preceding full snapshot.** A `delta` or legacy `diff` revision appears in the chain without a prior full revision to anchor against. Common cause: partial import, manual deletion of the seed snapshot.
+1. **No preceding full snapshot.** A `delta` revision appears in the chain without a prior full revision to anchor against. Common cause: partial import, manual deletion of the seed snapshot.
 2. **Snapshot unreachable.** `reconstructText` walks back through deltas and never finds a non-delta revision. Same symptom as (1) but detected mid-walk.
 3. **Patch failure.** `diff_match_patch.patch_apply` reports any patch as unsuccessful when resolving the text chain.
 4. **Parse failure.** `revision-data` is malformed JSON, or a delta patch text cannot be parsed.
 5. **Hash mismatch.** Reconstructed state hashes to a different value than the stored `revision-full-hash`. Indicates silent drift — the stored data cannot be trusted even if the chain walk completed without errors.
-
-Ok revisions from a structurally healthy chain but with no stored hash (pre-Phase 10 revisions) return `ok: true` with reason `legacy (no stored hash)` — we cannot verify them either way.
 
 ## API surface
 
@@ -40,7 +38,7 @@ revisor.repairAllChains()
 `repairChain` is intentionally conservative:
 
 1. Stamps every broken revision with `revision-broken-chain: yes`. The Revisions tab UI surfaces these with a red `⚠ broken chain` badge so users know not to trust the reconstructed content.
-2. Finds the earliest *ok* delta or diff revision that follows a broken revision, and promotes it to a `full` snapshot. This anchors the downstream chain so further losses don't cascade past that point.
+2. Finds the earliest *ok* delta revision that follows a broken revision, and promotes it to a `full` snapshot. This anchors the downstream chain so further losses don't cascade past that point.
 
 Repair never deletes revisions, never rewrites their `revision-data` in a lossy way, and never attempts to fabricate missing state. Broken revisions stay broken — they are flagged, not patched up.
 
@@ -71,7 +69,3 @@ Importing revisions for a tiddler that does not exist locally is supported and s
 ### 3. Newer-schema revisions
 
 Revisions carrying a `revision-version` value the current reader doesn't recognize are still read. The reader ignores unknown `revision-version` and unknown metadata fields on the revision tiddler — `revision-data` is the source of truth. This is the "readers stay tolerant" policy from [schema-versioning.md](schema-versioning.md).
-
-### 4. Pre-versioning revisions (no `revision-full-hash`)
-
-Legacy revisions pass `verifyChain` as ok because there is no stored hash to compare against. Their chain structure (storage mode ordering, patch success) is still checked.

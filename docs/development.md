@@ -77,7 +77,7 @@ Structure under `tests/`:
 | `filters.test.js` | All three filter operators, including fallbacks. |
 | `import.test.js` | Import behavior and edge cases. |
 
-Coverage targets: ~90% statements/lines on core code. Do not drop below; the exit criterion for Phase 9 is ongoing.
+Coverage targets: ~90% statements/lines on core code. Do not drop below.
 
 ### Writing new tests
 
@@ -87,7 +87,7 @@ The mock `$tw` is intentionally minimal — add methods to it only when a test n
 
 - All ES-module source lives under `src/`. Do **not** edit `lib/` directly — it is a Babel output.
 - No comments that restate the code. The top of `revisor.js` is the canonical place to document revision tiddler structure; mirror any field addition there **and** in [data-model.md](data-model.md).
-- Keep `AUTO_FIELDS` in sync across `revisor.js`, `listener.js`, and `filters.js`. A helper extraction is tempting but each file loads in its own TW module boundary, so duplication is pragmatic.
+- `AUTO_FIELDS` is exported from `revisor.js` and imported by `filters.js`. `listener.js` inlines an equivalent set for its own `tiddlerFieldsChanged` check — keep it aligned with the exported list.
 - Prefer pure functions on `Revisor`. UI-driven state (e.g. toggling the enabled flag around a restore) stays inside the method; hooks in `listener.js` stay thin.
 - When introducing a new revision-level field, bump `SCHEMA_VERSION` in `revisor.js` and document the change in [schema-versioning.md](schema-versioning.md).
 
