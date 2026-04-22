@@ -44,6 +44,22 @@
             "$:/core/templates/exporters/TidFile",
             "exportFilter",
             "[<currentTiddler>]"
+        ],
+        "library": [
+            "--makelibrary",
+            "$:/UpgradeLibrary",
+            "--savelibrarytiddlers",
+            "$:/UpgradeLibrary",
+            "[prefix[$:/plugins/mblackman/]]",
+            "recipes/library/tiddlers/",
+            "$:/UpgradeLibrary/List",
+            "--savetiddler",
+            "$:/UpgradeLibrary/List",
+            "recipes/library/tiddlers.json",
+            "--rendertiddler",
+            "$:/plugins/tiddlywiki/pluginlibrary",
+            "index.html",
+            "text/plain"
         ]
     }
 }

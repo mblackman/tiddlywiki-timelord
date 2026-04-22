@@ -4,9 +4,10 @@
   "description": "",
   "main": "npm run build-all",
   "scripts": {
-    "build-all": "npm run build-plugin && npm run seed-demo && npm run build-demo",
+    "build-all": "npm run build-plugin && npm run seed-demo && npm run build-demo && npm run build-library",
     "build-plugin": "npm run babel && npm run minify && cross-env TIDDLYWIKI_PLUGIN_PATH=plugins tiddlywiki demo --output build --build timelord",
     "build-demo": "cross-env TIDDLYWIKI_PLUGIN_PATH=plugins tiddlywiki demo --output build --build index",
+    "build-library": "cross-env TIDDLYWIKI_PLUGIN_PATH=plugins tiddlywiki demo --output build/library --build library",
     "build-debug": "npm run babel && cross-env TIDDLYWIKI_PLUGIN_PATH=plugins tiddlywiki debug --output build --build index",
     "babel": "babel plugins/mblackman/timelord/src -d plugins/mblackman/timelord/lib",
     "minify": "node scripts/minify-plugin.js",

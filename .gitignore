@@ -117,3 +117,6 @@ demo/tiddlers/$__plugins_mblackman_timelord_revisions_*
 
 # TW runtime state — changes on every server run
 demo/tiddlers/$__StoryList.tid
+
+# TW runtime state from library build
+demo/tiddlers/$__UpgradeLibrary*

@@ -28,7 +28,7 @@
 			"file": "Readme.tid",
 			"fields": {
 				"type": "text/vnd.tiddlywiki",
-				"title": "$:/plugins/mblackman/timelord/Readme",
+				"title": "$:/plugins/mblackman/timelord/readme",
 				"caption": "Timelord Readme"
 			}
 		},

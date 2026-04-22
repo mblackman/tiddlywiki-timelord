@@ -1,12 +1,14 @@
 {
     "title": "$:/plugins/mblackman/timelord",
-    "description": "A timelord plugin using diffs to track revisions.",
+    "name": "timelord",
+    "description": "Tracks tiddler revision history using efficient diff/delta storage, with view, restore, and prune controls.",
     "author": "mblackman",
     "version": "0.0.8",
     "core-version": ">=5.3.0",
     "source": "https://github.com/mblackman/tiddlywiki-timelord",
+    "documentation": "$:/plugins/mblackman/timelord/Help",
     "plugin-type": "plugin",
-    "list": "Readme Help Settings Stats",
+    "list": "readme Help Settings Stats",
     "stability": "STABILITY_1_EXPERIMENTAL",
     "type": "application/json"
 }
