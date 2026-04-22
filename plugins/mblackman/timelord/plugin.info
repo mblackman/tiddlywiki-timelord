@@ -3,7 +3,7 @@
     "name": "timelord",
     "description": "Tracks tiddler revision history using efficient diff/delta storage, with view, restore, and prune controls.",
     "author": "mblackman",
-    "version": "0.0.9",
+    "version": "0.0.10",
     "core-version": ">=5.3.0",
     "source": "https://github.com/mblackman/tiddlywiki-timelord",
     "documentation": "$:/plugins/mblackman/timelord/Help",

@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.0.10 — 2026-04-21
+
+### Fixes
+
+- Fix build config to work with CPL.
+
 ## v0.0.9 — 2026-04-21
 
 ### Distribution
