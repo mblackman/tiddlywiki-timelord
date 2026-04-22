@@ -296,6 +296,64 @@ describe('th-saving-tiddler hook', () => {
     expect($tw.wiki.getTiddlersWithTag(tag)).toHaveLength(0);
   });
 
+  it('skips revision when timelord-track field is "no"', () => {
+    const oldTiddler = new $tw.Tiddler({ title: 'Doc', text: 'old', modifier: 'me', 'timelord-track': 'no' });
+    $tw.wiki.addTiddler(oldTiddler);
+
+    const newTiddler = new $tw.Tiddler({ title: 'Doc', text: 'new', modifier: 'me', 'timelord-track': 'no' });
+    const draft = new $tw.Tiddler({ title: 'Draft', 'draft.of': 'Doc' });
+
+    savingHook(newTiddler, draft);
+
+    const tag = generateTag('Doc');
+    expect($tw.wiki.getTiddlersWithTag(tag)).toHaveLength(0);
+  });
+
+  it('skips revision for timelord-track values "false" and "0"', () => {
+    for (const val of ['false', '0', 'FALSE', ' no ']) {
+      resetTw($tw);
+      jest.resetModules();
+      ({ startup } = require('../plugins/mblackman/timelord/src/listener'));
+      startup();
+      const hook = $tw.hooks._hooks['th-saving-tiddler'][0];
+
+      $tw.wiki.addTiddler(new $tw.Tiddler({ title: 'Doc', text: 'old', modifier: 'me', 'timelord-track': val }));
+      const newTiddler = new $tw.Tiddler({ title: 'Doc', text: 'new', modifier: 'me', 'timelord-track': val });
+      const draft = new $tw.Tiddler({ title: 'Draft', 'draft.of': 'Doc' });
+      hook(newTiddler, draft);
+
+      const tag = generateTag('Doc');
+      expect($tw.wiki.getTiddlersWithTag(tag)).toHaveLength(0);
+    }
+  });
+
+  it('tracks normally when timelord-track field is "yes" or absent', () => {
+    const oldTiddler = new $tw.Tiddler({ title: 'Doc', text: 'old', modifier: 'me', 'timelord-track': 'yes' });
+    $tw.wiki.addTiddler(oldTiddler);
+
+    const newTiddler = new $tw.Tiddler({ title: 'Doc', text: 'new', modifier: 'me', 'timelord-track': 'yes' });
+    const draft = new $tw.Tiddler({ title: 'Draft', 'draft.of': 'Doc' });
+
+    savingHook(newTiddler, draft);
+
+    const tag = generateTag('Doc');
+    expect($tw.wiki.getTiddlersWithTag(tag).length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('does not create revision when only timelord-track field changes', () => {
+    const oldTiddler = new $tw.Tiddler({ title: 'Doc', text: 'same', modifier: 'me' });
+    $tw.wiki.addTiddler(oldTiddler);
+
+    // User opts in explicitly — only the flag field changed
+    const newTiddler = new $tw.Tiddler({ title: 'Doc', text: 'same', modifier: 'me', 'timelord-track': 'yes' });
+    const draft = new $tw.Tiddler({ title: 'Draft', 'draft.of': 'Doc' });
+
+    savingHook(newTiddler, draft);
+
+    const tag = generateTag('Doc');
+    expect($tw.wiki.getTiddlersWithTag(tag)).toHaveLength(0);
+  });
+
   it('respects exclude filter', () => {
     // Set up the exclude filter to return 'Doc' when evaluated
     // We need to override filterTiddlers for this test
@@ -427,6 +485,16 @@ describe('th-deleting-tiddler hook', () => {
 
     const tag = generateTag('Doc');
     expect($tw.wiki.getTiddlersWithTag(tag).length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('skips delete-capture when timelord-track field is falsy', () => {
+    const tiddler = new $tw.Tiddler({ title: 'OptedOut', text: 'bye', modifier: 'me', 'timelord-track': 'no' });
+    $tw.wiki.addTiddler(tiddler);
+
+    deletingHook(tiddler);
+
+    const tag = generateTag('OptedOut');
+    expect($tw.wiki.getTiddlersWithTag(tag)).toHaveLength(0);
   });
 
   it('does not skip when exclude filter does not match this tiddler', () => {

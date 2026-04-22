@@ -40,7 +40,9 @@ Use the ''Timelord Settings'' tab in the [[Control Panel|$:/ControlPanel]] to:
 * ''Disable tracking'' globally — e.g. before a bulk import, then re-enable afterwards.
 * Set an ''Exclusion Filter'' to skip specific tiddlers permanently (e.g. ''`[tag[NoTrack]]`'' skips everything tagged ''NoTrack'').
 
-Saves that happen while tracking is paused or that match the exclude filter create no revision.
+For a one-off opt-out, add a ''`timelord-track`'' field on the tiddler itself with a value of ''`no`'', ''`false`'', or ''`0`''. That tiddler is then skipped on save and on delete, without changing the global exclude filter.
+
+Saves that happen while tracking is paused, that match the exclude filter, or whose tiddler opts out via ''`timelord-track`'' create no revision.
 
 !! Pruning history
 

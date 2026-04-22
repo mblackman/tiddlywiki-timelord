@@ -1,12 +1,22 @@
 "use strict";
 import { Revisor, generateTag } from './revisor.js';
 
+// Returns true if the tiddler opts out of tracking via the `timelord-track` field.
+// Falsy values (no / false / 0) disable tracking for this tiddler only.
+function isOptedOut(tiddler) {
+	if (!tiddler) return false;
+	const v = tiddler.getFieldString("timelord-track");
+	if (!v) return false;
+	const lower = v.toLowerCase().trim();
+	return lower === "no" || lower === "false" || lower === "0";
+}
+
 // Returns true if any meaningful field changed between oldTiddler and newTiddler.
 // Skips fields that change automatically (timestamps, draft metadata, plugin-managed fields).
 function tiddlerFieldsChanged(oldTiddler, newTiddler) {
 	const skip = new Set([
 		'modified', 'modifier', 'created', 'creator',
-		'draft.of', 'draft.title', 'revision-tag'
+		'draft.of', 'draft.title', 'revision-tag', 'timelord-track'
 	]);
 	const allFields = new Set([
 		...Object.keys(oldTiddler.fields),
@@ -48,6 +58,9 @@ export function startup() {
 		if ($tw.wiki.isShadowTiddler(newTitle)) return newTiddler;
 		if ($tw.wiki.isSystemTiddler(oldTitle)) return newTiddler;
 		if ($tw.wiki.isShadowTiddler(oldTitle)) return newTiddler;
+
+		// Per-tiddler opt-out via `timelord-track` field
+		if (isOptedOut(newTiddler)) return newTiddler;
 
 		// Per-tiddler exclusion filter
 		const excludeFilter = $tw.wiki.getTiddlerText("$:/config/mblackman/timelord/exclude-filter", "");
@@ -216,6 +229,9 @@ export function startup() {
 
 		if ($tw.wiki.isSystemTiddler(title)) return tiddler;
 		if ($tw.wiki.isShadowTiddler(title)) return tiddler;
+
+		// Per-tiddler opt-out via `timelord-track` field
+		if (isOptedOut(tiddler)) return tiddler;
 
 		// Per-tiddler exclusion filter
 		const excludeFilter = $tw.wiki.getTiddlerText("$:/config/mblackman/timelord/exclude-filter", "");
