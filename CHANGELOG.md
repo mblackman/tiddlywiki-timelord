@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.0.9 — 2026-04-21
+
+### Distribution
+
+- **Community Plugin Library (CPL) compatible** — Plugin metadata now conforms to CPL importer expectations (`name` field, lowercase `readme` tiddler, `documentation` pointer). A new `library` build target in `demo/tiddlywiki.info` produces a hostable TiddlyWiki plugin library at `build/library/` (`index.html` + `recipes/library/tiddlers.json` + per-plugin skinny tiddlers). The existing release workflow deploys it to GitHub Pages, so the library URL can be submitted to `libraries.json` in [tiddly-gittly/TiddlyWiki-CPL](https://github.com/tiddly-gittly/TiddlyWiki-CPL).
+- Added `npm run build-library` script; `npm run build-all` now includes it.
+
+### Fixes
+
+- **Prune history by filter** — When the filter matched no tiddlers, the confirmation UI failed to display the (empty) match list. Fixed in d88f4d8.
+
+### Docs
+
+- Removed stale references to legacy behavior from in-wiki and repo documentation (bb09838).
+
 ## v0.0.8 — 2026-04-20
 
 ### Cleanup
