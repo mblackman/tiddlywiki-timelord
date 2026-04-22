@@ -1,14 +1,47 @@
 "use strict";
 import { Revisor, generateTag } from './revisor.js';
 
-// Returns true if the tiddler opts out of tracking via the `timelord-track` field.
-// Falsy values (no / false / 0) disable tracking for this tiddler only.
-function isOptedOut(tiddler) {
-	if (!tiddler) return false;
+// Reads the per-tiddler `timelord-track` override.
+// Returns "force-skip" for falsy values (no/false/0), "force-track" for truthy
+// values (yes/true/1), or null when the field is absent or unrecognized.
+// A force-track override wins over the exclude filter; a force-skip override
+// wins over the include filter.
+function getTrackOverride(tiddler) {
+	if (!tiddler) return null;
 	const v = tiddler.getFieldString("timelord-track");
-	if (!v) return false;
+	if (!v) return null;
 	const lower = v.toLowerCase().trim();
-	return lower === "no" || lower === "false" || lower === "0";
+	if (lower === "no" || lower === "false" || lower === "0") return "force-skip";
+	if (lower === "yes" || lower === "true" || lower === "1") return "force-track";
+	return null;
+}
+
+// Decides whether a tiddler should be tracked. Resolves the per-tiddler
+// override first, then applies the configured filter mode (exclude or include).
+function shouldTrack(title, tiddler) {
+	const override = getTrackOverride(tiddler);
+	if (override === "force-skip") return false;
+	if (override === "force-track") return true;
+
+	const mode = ($tw.wiki.getTiddlerText(
+		"$:/config/mblackman/timelord/filter-mode", "exclude"
+	) || "exclude").trim().toLowerCase();
+
+	if (mode === "include") {
+		const includeFilter = $tw.wiki.getTiddlerText(
+			"$:/config/mblackman/timelord/include-filter", ""
+		);
+		if (!includeFilter || !includeFilter.trim()) return false;
+		const matched = $tw.wiki.filterTiddlers(includeFilter);
+		return matched.indexOf(title) !== -1;
+	}
+
+	const excludeFilter = $tw.wiki.getTiddlerText(
+		"$:/config/mblackman/timelord/exclude-filter", ""
+	);
+	if (!excludeFilter || !excludeFilter.trim()) return true;
+	const excluded = $tw.wiki.filterTiddlers(excludeFilter);
+	return excluded.indexOf(title) === -1;
 }
 
 // Returns true if any meaningful field changed between oldTiddler and newTiddler.
@@ -59,15 +92,7 @@ export function startup() {
 		if ($tw.wiki.isSystemTiddler(oldTitle)) return newTiddler;
 		if ($tw.wiki.isShadowTiddler(oldTitle)) return newTiddler;
 
-		// Per-tiddler opt-out via `timelord-track` field
-		if (isOptedOut(newTiddler)) return newTiddler;
-
-		// Per-tiddler exclusion filter
-		const excludeFilter = $tw.wiki.getTiddlerText("$:/config/mblackman/timelord/exclude-filter", "");
-		if (excludeFilter && excludeFilter.trim()) {
-			const excluded = $tw.wiki.filterTiddlers(excludeFilter);
-			if (excluded.indexOf(newTitle) !== -1) return newTiddler;
-		}
+		if (!shouldTrack(newTitle, newTiddler)) return newTiddler;
 
     	const isRename = oldTitle != newTitle;
     	if (isRename) {
@@ -230,15 +255,7 @@ export function startup() {
 		if ($tw.wiki.isSystemTiddler(title)) return tiddler;
 		if ($tw.wiki.isShadowTiddler(title)) return tiddler;
 
-		// Per-tiddler opt-out via `timelord-track` field
-		if (isOptedOut(tiddler)) return tiddler;
-
-		// Per-tiddler exclusion filter
-		const excludeFilter = $tw.wiki.getTiddlerText("$:/config/mblackman/timelord/exclude-filter", "");
-		if (excludeFilter && excludeFilter.trim()) {
-			const excluded = $tw.wiki.filterTiddlers(excludeFilter);
-			if (excluded.indexOf(title) !== -1) return tiddler;
-		}
+		if (!shouldTrack(title, tiddler)) return tiddler;
 
 		revisor.captureDeletedState(title, tiddler);
 		return tiddler;

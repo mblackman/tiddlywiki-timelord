@@ -38,11 +38,16 @@ The input is shown by default. To hide it, uncheck ''Show edit summary field in 
 Use the ''Timelord Settings'' tab in the [[Control Panel|$:/ControlPanel]] to:
 
 * ''Disable tracking'' globally — e.g. before a bulk import, then re-enable afterwards.
-* Set an ''Exclusion Filter'' to skip specific tiddlers permanently (e.g. ''`[tag[NoTrack]]`'' skips everything tagged ''NoTrack'').
+* Pick a ''Filter Mode'':
+** ''Exclude mode'' (default) — track everything except tiddlers matching the exclude filter (e.g. ''`[tag[NoTrack]]`'' skips everything tagged ''NoTrack'').
+** ''Include mode'' — track nothing except tiddlers matching the include filter (e.g. ''`[tag[Journal]]`'' tracks only tiddlers tagged ''Journal''). An empty include filter tracks nothing.
 
-For a one-off opt-out, add a ''`timelord-track`'' field on the tiddler itself with a value of ''`no`'', ''`false`'', or ''`0`''. That tiddler is then skipped on save and on delete, without changing the global exclude filter.
+For a per-tiddler override, add a ''`timelord-track`'' field on the tiddler itself:
 
-Saves that happen while tracking is paused, that match the exclude filter, or whose tiddler opts out via ''`timelord-track`'' create no revision.
+* ''`no`'', ''`false`'', ''`0`'' — skip this tiddler regardless of the filter.
+* ''`yes`'', ''`true`'', ''`1`'' — track this tiddler regardless of the filter (useful for pulling one tiddler into coverage in either mode).
+
+Saves that happen while tracking is paused, or that are skipped by the current mode and not overridden by ''`timelord-track`'', create no revision.
 
 !! Pruning history
 

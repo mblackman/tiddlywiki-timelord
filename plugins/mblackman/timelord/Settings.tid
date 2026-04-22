@@ -6,13 +6,44 @@
 
 ---
 
-! Exclusion Filter
+! Filter Mode
+
+Choose how the filter below selects which tiddlers to track.
+
+<$radio tiddler="$:/config/mblackman/timelord/filter-mode" field="text" value="exclude" default="exclude"> ''Exclude mode'' — track everything except tiddlers matching the filter (default).</$radio>
+
+<$radio tiddler="$:/config/mblackman/timelord/filter-mode" field="text" value="include" default="exclude"> ''Include mode'' — track nothing except tiddlers matching the filter.</$radio>
+
+<$reveal type="match" stateTitle="$:/config/mblackman/timelord/filter-mode" text="include" default="exclude">
+
+!! Include Filter
+
+Only tiddlers matching this filter will be tracked:
+
+<$edit-text tiddler="$:/config/mblackman/timelord/include-filter" field="text" tag="input" default="" placeholder="e.g. [tag[Journal]]" class="tc-edit-texteditor"/>
+
+//Example: ''[tag[Journal]]'' tracks only tiddlers tagged ~Journal. An empty filter tracks nothing — use the global toggle above instead.//
+
+</$reveal>
+
+<$reveal type="nomatch" stateTitle="$:/config/mblackman/timelord/filter-mode" text="include" default="exclude">
+
+!! Exclude Filter
 
 Tiddlers matching this filter will not be tracked (leave blank to track all):
 
 <$edit-text tiddler="$:/config/mblackman/timelord/exclude-filter" field="text" tag="input" default="" placeholder="e.g. [tag[NoTrack]]" class="tc-edit-texteditor"/>
 
 //Example: ''[tag[NoTrack]]'' skips any tiddler tagged ~NoTrack.//
+
+</$reveal>
+
+!! Per-tiddler override
+
+Add a ''`timelord-track`'' field to any tiddler to override the filter for that one tiddler:
+
+* ''`no`'', ''`false`'', ''`0`'' — skip this tiddler regardless of the filter.
+* ''`yes`'', ''`true`'', ''`1`'' — track this tiddler regardless of the filter.
 
 ---
 

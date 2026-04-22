@@ -354,6 +354,123 @@ describe('th-saving-tiddler hook', () => {
     expect($tw.wiki.getTiddlersWithTag(tag)).toHaveLength(0);
   });
 
+  it('tracks when timelord-track="yes" overrides the exclude filter', () => {
+    const origFilter = $tw.wiki.filterTiddlers;
+    $tw.wiki.filterTiddlers = () => ['Doc'];
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: '$:/config/mblackman/timelord/exclude-filter',
+      text: '[tag[excluded]]',
+    }));
+
+    const oldTiddler = new $tw.Tiddler({ title: 'Doc', text: 'old', modifier: 'me', 'timelord-track': 'yes' });
+    $tw.wiki.addTiddler(oldTiddler);
+
+    const newTiddler = new $tw.Tiddler({ title: 'Doc', text: 'new', modifier: 'me', 'timelord-track': 'yes' });
+    const draft = new $tw.Tiddler({ title: 'Draft', 'draft.of': 'Doc' });
+
+    savingHook(newTiddler, draft);
+
+    const tag = generateTag('Doc');
+    expect($tw.wiki.getTiddlersWithTag(tag).length).toBeGreaterThanOrEqual(1);
+
+    $tw.wiki.filterTiddlers = origFilter;
+  });
+
+  it('include mode: tracks only matching tiddlers', () => {
+    const origFilter = $tw.wiki.filterTiddlers;
+    $tw.wiki.filterTiddlers = () => ['TrackMe'];
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: '$:/config/mblackman/timelord/filter-mode',
+      text: 'include',
+    }));
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: '$:/config/mblackman/timelord/include-filter',
+      text: '[tag[Journal]]',
+    }));
+
+    // Matches include filter → tracked
+    const oldMatch = new $tw.Tiddler({ title: 'TrackMe', text: 'old', modifier: 'me' });
+    $tw.wiki.addTiddler(oldMatch);
+    const newMatch = new $tw.Tiddler({ title: 'TrackMe', text: 'new', modifier: 'me' });
+    savingHook(newMatch, new $tw.Tiddler({ title: 'Draft', 'draft.of': 'TrackMe' }));
+
+    // Does not match include filter → skipped
+    const oldSkip = new $tw.Tiddler({ title: 'SkipMe', text: 'old', modifier: 'me' });
+    $tw.wiki.addTiddler(oldSkip);
+    const newSkip = new $tw.Tiddler({ title: 'SkipMe', text: 'new', modifier: 'me' });
+    savingHook(newSkip, new $tw.Tiddler({ title: 'Draft', 'draft.of': 'SkipMe' }));
+
+    expect($tw.wiki.getTiddlersWithTag(generateTag('TrackMe')).length).toBeGreaterThanOrEqual(1);
+    expect($tw.wiki.getTiddlersWithTag(generateTag('SkipMe'))).toHaveLength(0);
+
+    $tw.wiki.filterTiddlers = origFilter;
+  });
+
+  it('include mode with empty filter skips everything', () => {
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: '$:/config/mblackman/timelord/filter-mode',
+      text: 'include',
+    }));
+    // No include-filter tiddler set
+
+    const oldTiddler = new $tw.Tiddler({ title: 'Doc', text: 'old', modifier: 'me' });
+    $tw.wiki.addTiddler(oldTiddler);
+    const newTiddler = new $tw.Tiddler({ title: 'Doc', text: 'new', modifier: 'me' });
+    const draft = new $tw.Tiddler({ title: 'Draft', 'draft.of': 'Doc' });
+
+    savingHook(newTiddler, draft);
+
+    expect($tw.wiki.getTiddlersWithTag(generateTag('Doc'))).toHaveLength(0);
+  });
+
+  it('include mode: timelord-track="yes" overrides a non-matching filter', () => {
+    const origFilter = $tw.wiki.filterTiddlers;
+    $tw.wiki.filterTiddlers = () => ['OtherDoc']; // does NOT match 'Doc'
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: '$:/config/mblackman/timelord/filter-mode',
+      text: 'include',
+    }));
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: '$:/config/mblackman/timelord/include-filter',
+      text: '[tag[Journal]]',
+    }));
+
+    const oldTiddler = new $tw.Tiddler({ title: 'Doc', text: 'old', modifier: 'me', 'timelord-track': 'yes' });
+    $tw.wiki.addTiddler(oldTiddler);
+    const newTiddler = new $tw.Tiddler({ title: 'Doc', text: 'new', modifier: 'me', 'timelord-track': 'yes' });
+    const draft = new $tw.Tiddler({ title: 'Draft', 'draft.of': 'Doc' });
+
+    savingHook(newTiddler, draft);
+
+    expect($tw.wiki.getTiddlersWithTag(generateTag('Doc')).length).toBeGreaterThanOrEqual(1);
+
+    $tw.wiki.filterTiddlers = origFilter;
+  });
+
+  it('include mode: timelord-track="no" overrides a matching filter', () => {
+    const origFilter = $tw.wiki.filterTiddlers;
+    $tw.wiki.filterTiddlers = () => ['Doc']; // matches, would normally track
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: '$:/config/mblackman/timelord/filter-mode',
+      text: 'include',
+    }));
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: '$:/config/mblackman/timelord/include-filter',
+      text: '[tag[Journal]]',
+    }));
+
+    const oldTiddler = new $tw.Tiddler({ title: 'Doc', text: 'old', modifier: 'me', 'timelord-track': 'no' });
+    $tw.wiki.addTiddler(oldTiddler);
+    const newTiddler = new $tw.Tiddler({ title: 'Doc', text: 'new', modifier: 'me', 'timelord-track': 'no' });
+    const draft = new $tw.Tiddler({ title: 'Draft', 'draft.of': 'Doc' });
+
+    savingHook(newTiddler, draft);
+
+    expect($tw.wiki.getTiddlersWithTag(generateTag('Doc'))).toHaveLength(0);
+
+    $tw.wiki.filterTiddlers = origFilter;
+  });
+
   it('respects exclude filter', () => {
     // Set up the exclude filter to return 'Doc' when evaluated
     // We need to override filterTiddlers for this test
@@ -495,6 +612,47 @@ describe('th-deleting-tiddler hook', () => {
 
     const tag = generateTag('OptedOut');
     expect($tw.wiki.getTiddlersWithTag(tag)).toHaveLength(0);
+  });
+
+  it('captures delete when timelord-track="yes" overrides the exclude filter', () => {
+    const origFilter = $tw.wiki.filterTiddlers;
+    $tw.wiki.filterTiddlers = () => ['Doc'];
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: '$:/config/mblackman/timelord/exclude-filter',
+      text: '[tag[excluded]]',
+    }));
+
+    const tiddler = new $tw.Tiddler({ title: 'Doc', text: 'bye', modifier: 'me', 'timelord-track': 'yes' });
+    $tw.wiki.addTiddler(tiddler);
+
+    deletingHook(tiddler);
+
+    const tag = generateTag('Doc');
+    expect($tw.wiki.getTiddlersWithTag(tag).length).toBeGreaterThanOrEqual(1);
+
+    $tw.wiki.filterTiddlers = origFilter;
+  });
+
+  it('include mode skips delete-capture for non-matching tiddlers', () => {
+    const origFilter = $tw.wiki.filterTiddlers;
+    $tw.wiki.filterTiddlers = () => ['OtherDoc'];
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: '$:/config/mblackman/timelord/filter-mode',
+      text: 'include',
+    }));
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: '$:/config/mblackman/timelord/include-filter',
+      text: '[tag[Journal]]',
+    }));
+
+    const tiddler = new $tw.Tiddler({ title: 'Doc', text: 'bye', modifier: 'me' });
+    $tw.wiki.addTiddler(tiddler);
+
+    deletingHook(tiddler);
+
+    expect($tw.wiki.getTiddlersWithTag(generateTag('Doc'))).toHaveLength(0);
+
+    $tw.wiki.filterTiddlers = origFilter;
   });
 
   it('does not skip when exclude filter does not match this tiddler', () => {
