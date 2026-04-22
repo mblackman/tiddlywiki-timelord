@@ -24,6 +24,18 @@ Tiddlers matching this filter will not be tracked (leave blank to track all):
 
 ---
 
+! Date Format
+
+Format string used to render revision timestamps in the Revisions panel. Uses TiddlyWiki's [[date format syntax|https://tiddlywiki.com/static/DateFormat.html]].
+
+<$edit-text tiddler="$:/config/mblackman/timelord/date-format" field="text" tag="input" default="DDth MMM YYYY at 0hh:0mm" class="tc-edit-texteditor"/>
+
+//Examples: ''DDth MMM YYYY at 0hh:0mm'' (English), ''YYYY-0MM-0DD 0hh:0mm'' (ISO), ''0DD/0MM/YYYY 0hh:0mm'' (DMY).//
+
+Live preview: <$macrocall $name="now" format={{$:/config/mblackman/timelord/date-format}}/>
+
+---
+
 ! Diff Size Limit
 
 Maximum reconstructed text length (in characters) before the diff view falls back to showing raw text. Default: 102400 (100&nbsp;KB).

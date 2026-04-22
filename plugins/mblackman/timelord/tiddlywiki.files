@@ -99,6 +99,13 @@
 				"tags": "$:/tags/EditTemplate",
 				"list-after": "$:/core/ui/EditTemplate/body"
 			}
+		},
+		{
+			"file": "Config_DateFormat.tid",
+			"fields": {
+				"type": "text/vnd.tiddlywiki",
+				"title": "$:/config/mblackman/timelord/date-format"
+			}
 		}
 	]
 }

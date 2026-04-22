@@ -97,7 +97,7 @@ Restore this version? <$button>Yes<$action-sendmessage $message="tm-restore-revi
   renamedFrom={{{[<revisionTitle>get[revision-renamed-from]]}}}
   renamedTo={{{[<revisionTitle>get[revision-renamed-to]]}}}
 >
-<div class="mblackman-rh-entry-info"><$list filter="[<revNum>!match[]]" variable="ignored">#<<revNum>> · </$list><$link tiddler=<<revisionTitle>>><$view tiddler=<<revisionTitle>> field="modified" format="date" template="DDth MMM YYYY at 0hh:0mm"/></$link> by ''<$view tiddler=<<revisionTitle>> field="modifier"/>'' · <<charCount>> chars<$list filter="[<brokenChain>match[yes]]" variable="ignored"> · <span class="mblackman-rh-warning" title="This revision could not be reconstructed reliably — displayed content may be incorrect">⚠ broken chain</span></$list></div>
+<div class="mblackman-rh-entry-info"><$list filter="[<revNum>!match[]]" variable="ignored">#<<revNum>> · </$list><$link tiddler=<<revisionTitle>>><$view tiddler=<<revisionTitle>> field="modified" format="date" template={{$:/config/mblackman/timelord/date-format}}/></$link> by ''<$view tiddler=<<revisionTitle>> field="modifier"/>'' · <<charCount>> chars<$list filter="[<brokenChain>match[yes]]" variable="ignored"> · <span class="mblackman-rh-warning" title="This revision could not be reconstructed reliably — displayed content may be incorrect">⚠ broken chain</span></$list></div>
 <$list filter="[<revisionTitle>has[revision-summary]]" variable="ignored"><div class="mblackman-rh-summary"><$view tiddler=<<revisionTitle>> field="revision-summary"/></div></$list>
 <div class="mblackman-rh-entry-actions">
 <<restore-actions>>
@@ -141,7 +141,7 @@ Restore this version? <$button>Yes<$action-sendmessage $message="tm-restore-revi
 >
 <div class="mblackman-rh-compare-pane">
 <div class="mblackman-rh-compare-header">
-<span>Comparing #<<olderNum>> (<$view tiddler=<<olderTitle>> field="modified" format="date" template="DDth MMM YYYY 0hh:0mm"/>) → #<<newerNum>> (<$view tiddler=<<newerTitle>> field="modified" format="date" template="DDth MMM YYYY 0hh:0mm"/>)</span>
+<span>Comparing #<<olderNum>> (<$view tiddler=<<olderTitle>> field="modified" format="date" template={{$:/config/mblackman/timelord/date-format}}/>) → #<<newerNum>> (<$view tiddler=<<newerTitle>> field="modified" format="date" template={{$:/config/mblackman/timelord/date-format}}/>)</span>
 <$button class="mblackman-rh-compare-close" tooltip="Close comparison">✕<$action-setfield $tiddler=<<compareAState>> $value=""/><$action-setfield $tiddler=<<compareBState>> $value=""/></$button>
 </div>
 <$list filter="[<compareBinary>!match[]]" variable="ignored">Binary content — cannot diff.</$list>
