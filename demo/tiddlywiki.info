@@ -4,6 +4,7 @@
         "tiddlywiki/tiddlyweb",
         "tiddlywiki/filesystem",
         "tiddlywiki/highlight",
+        "tiddlywiki/pluginlibrary",
         "mblackman/timelord"
     ],
     "themes": [
@@ -57,7 +58,7 @@
             "$:/UpgradeLibrary/List",
             "recipes/library/tiddlers.json",
             "--rendertiddler",
-            "$:/plugins/tiddlywiki/pluginlibrary",
+            "$:/plugins/tiddlywiki/pluginlibrary/library.template.html",
             "index.html",
             "text/plain"
         ]
