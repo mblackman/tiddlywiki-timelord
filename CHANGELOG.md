@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.0.11 — 2026-04-22
+
+### Features
+
+- **Configurable date format** ([#2](https://github.com/mblackman/tiddlywiki-timelord/issues/2)) — Revision timestamps in the Revisions panel now read their format string from `$:/config/mblackman/timelord/date-format`. Default preserves existing English layout (`DDth MMM YYYY at 0hh:0mm`); editable from the Timelord Settings tab using TiddlyWiki's standard date format syntax. Addresses F-04 (non-English users).
+- **Per-tiddler tracking override** ([#1](https://github.com/mblackman/tiddlywiki-timelord/issues/1)) — Add a `timelord-track` field to any tiddler to opt that tiddler out (`no`/`false`/`0`) or in (`yes`/`true`/`1`) regardless of the active filter. The override takes priority over both the exclude filter and the new include filter. Addresses F-08.
+- **Allowlist (include-only) tracking mode** ([#3](https://github.com/mblackman/tiddlywiki-timelord/issues/3)) — Settings tab now exposes a filter mode selector. In ''exclude mode'' (default, unchanged behavior) everything is tracked except tiddlers matching the exclude filter. In ''include mode'' nothing is tracked except tiddlers matching the new include filter (`$:/config/mblackman/timelord/include-filter`). An empty include filter tracks nothing. Addresses F-06.
+
 ## v0.0.10 — 2026-04-21
 
 ### Fixes
