@@ -1,5 +1,27 @@
 "use strict";
-import { Revisor, generateTag } from './revisor.js';
+import { Revisor, generateTag, hashName } from './revisor.js';
+
+const SKIPPED_STATE_PREFIX = "$:/temp/mblackman/timelord/last-save-skipped/";
+
+// Build the temp-tiddler title used to signal "last save for <name> produced no revision".
+// Session-only ($:/temp/), keyed by the same djb2 hash used for revision tags so Revisions.tid
+// can look it up without needing to hash on the wikitext side.
+function skippedStateTitle(name) {
+	return SKIPPED_STATE_PREFIX + hashName(name);
+}
+
+function markSaveSkipped(name) {
+	$tw.wiki.addTiddler(new $tw.Tiddler({
+		title: skippedStateTitle(name),
+		"tiddler-name": name,
+		"skipped-at": String(Date.now()),
+	}));
+}
+
+function clearSaveSkipped(name) {
+	const title = skippedStateTitle(name);
+	if ($tw.wiki.tiddlerExists(title)) $tw.wiki.deleteTiddler(title);
+}
 
 // Reads the per-tiddler `timelord-track` override.
 // Returns "force-skip" for falsy values (no/false/0), "force-track" for truthy
@@ -107,8 +129,10 @@ export function startup() {
     		revisor.addToHistory(newTitle, $tw.wiki.getTiddler(newTitle));
     	}
 
-    	// No meaningful field changes — skip revision
+    	// No meaningful field changes — skip revision but signal the skip so the UI
+    	// can explain why no new revision appeared (F-03a).
     	if (!tiddlerFieldsChanged(oldTiddler, newTiddler)) {
+    		markSaveSkipped(newTitle);
     		return newTiddler;
     	}
 
@@ -117,6 +141,8 @@ export function startup() {
     		opts.summary = editSummary;
     	}
     	revisor.addToHistory(newTitle, oldTiddler, Object.keys(opts).length > 0 ? opts : undefined);
+    	clearSaveSkipped(newTitle);
+    	if (isRename) clearSaveSkipped(oldTitle);
 
     	return newTiddler;
 	});

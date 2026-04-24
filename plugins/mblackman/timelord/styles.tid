@@ -104,6 +104,21 @@
 	border-color: <<colour dirty-indicator>>;
 }
 
+.mblackman-rh-skip-notice {
+	margin: 0.5em 0;
+	padding: 0.5em 0.75em;
+	background: <<colour message-background>>;
+	border: 1px solid <<colour message-border>>;
+	border-left: 3px solid <<colour muted-foreground>>;
+	border-radius: 3px;
+	color: <<colour message-foreground>>;
+	font-size: 0.9em;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: 0.5em;
+}
+
 .mblackman-rh-compare-hint {
 	margin: 0.5em 0;
 	padding: 0.4em 0.75em;

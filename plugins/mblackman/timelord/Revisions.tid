@@ -202,6 +202,13 @@ Cancel
   totalCount={{{[tag<revisionTag>count[]]}}}
 >
 
+<$list filter="[prefix[$:/temp/mblackman/timelord/last-save-skipped/]field:tiddler-name<parentTitle>]" variable="skipStateTitle">
+<div class="mblackman-rh-skip-notice">
+<span>Last save recorded no revision — only auto-managed fields (e.g. ''modified'') changed.</span>
+<$button class="tc-btn-invisible tc-tiddlylink" tooltip="Dismiss">✕<$action-deletetiddler $tiddler=<<skipStateTitle>>/></$button>
+</div>
+</$list>
+
 Sort: <$reveal type="nomatch" state=<<sortStateKey>> text="asc">Newest first | <$button set=<<sortStateKey>> setTo="asc">Oldest first</$button></$reveal><$reveal type="match" state=<<sortStateKey>> text="asc"><$button set=<<sortStateKey>> setTo="">Newest first</$button> | Oldest first</$reveal>
 
 <<delete-all-history>>

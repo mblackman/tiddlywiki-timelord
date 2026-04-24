@@ -1,5 +1,8 @@
 const { resetTw } = require('./mock-tw');
-const { generateTag } = require('../plugins/mblackman/timelord/src/revisor');
+const { generateTag, hashName } = require('../plugins/mblackman/timelord/src/revisor');
+
+const SKIPPED_PREFIX = '$:/temp/mblackman/timelord/last-save-skipped/';
+const skippedTitle = (name) => SKIPPED_PREFIX + hashName(name);
 
 // listener.js registers hooks on $tw at startup() call time, so we
 // re-require it fresh for each describe block via beforeEach.
@@ -129,6 +132,63 @@ describe('th-saving-tiddler hook', () => {
     const tag = generateTag('Doc');
     const revisions = $tw.wiki.getTiddlersWithTag(tag);
     expect(revisions).toHaveLength(0);
+  });
+
+  it('writes a skip-state temp tiddler when a save is silently skipped (F-03a)', () => {
+    const oldTiddler = new $tw.Tiddler({ title: 'Doc', text: 'same', modifier: 'me' });
+    $tw.wiki.addTiddler(oldTiddler);
+
+    const newTiddler = new $tw.Tiddler({
+      title: 'Doc', text: 'same', modifier: 'me', modified: '20260411120000000',
+    });
+    const draft = new $tw.Tiddler({ title: 'Draft of Doc', 'draft.of': 'Doc' });
+
+    savingHook(newTiddler, draft);
+
+    const stateTitle = skippedTitle('Doc');
+    expect($tw.wiki.tiddlerExists(stateTitle)).toBe(true);
+    const state = $tw.wiki.getTiddler(stateTitle);
+    expect(state.getFieldString('tiddler-name')).toBe('Doc');
+    expect(state.getFieldString('skipped-at')).toMatch(/^\d+$/);
+  });
+
+  it('clears a pre-existing skip-state tiddler when the next save creates a revision', () => {
+    const oldTiddler = new $tw.Tiddler({ title: 'Doc', text: 'same', modifier: 'me' });
+    $tw.wiki.addTiddler(oldTiddler);
+
+    // Simulate a stale skip-state from a prior silent save
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: skippedTitle('Doc'),
+      'tiddler-name': 'Doc',
+      'skipped-at': '1',
+    }));
+    expect($tw.wiki.tiddlerExists(skippedTitle('Doc'))).toBe(true);
+
+    const newTiddler = new $tw.Tiddler({ title: 'Doc', text: 'changed', modifier: 'me' });
+    const draft = new $tw.Tiddler({ title: 'Draft of Doc', 'draft.of': 'Doc' });
+
+    savingHook(newTiddler, draft);
+
+    expect($tw.wiki.tiddlerExists(skippedTitle('Doc'))).toBe(false);
+  });
+
+  it('clears the old-title skip-state on a rename that produces a revision', () => {
+    const oldTiddler = new $tw.Tiddler({ title: 'OldName', text: 'content', modifier: 'me' });
+    $tw.wiki.addTiddler(oldTiddler);
+
+    $tw.wiki.addTiddler(new $tw.Tiddler({
+      title: skippedTitle('OldName'),
+      'tiddler-name': 'OldName',
+      'skipped-at': '1',
+    }));
+
+    const newTiddler = new $tw.Tiddler({ title: 'NewName', text: 'content changed', modifier: 'me' });
+    const draft = new $tw.Tiddler({ title: 'Draft', 'draft.of': 'OldName' });
+
+    savingHook(newTiddler, draft);
+
+    expect($tw.wiki.tiddlerExists(skippedTitle('OldName'))).toBe(false);
+    expect($tw.wiki.tiddlerExists(skippedTitle('NewName'))).toBe(false);
   });
 
   it('handles rename by calling renameHistory', () => {
